@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+	<title>盤面・セル・候補数字の表記法</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+
+<body id="page">
+	<a id="pageTop"></a> 
+    <header>
+        	<img src="images/imgTop/ImageTop3.jpg" >
+    </header>
+	  
+    <script type="text/javascript"> writeNaviHeader(); </script>
+    
+<!-- ========================================================================== -->     
+    <section id="menuList">
+    	<aside>
+    		<ul>
+	            <li><a href="page11.html">順列</a></li>
+	            <li><a href="page12.html">組合せ</a></li>
+            
+	            <li><a href="page13.html">盤面・セル・候補数字の表記法　ハウス</a></li>
+	            <li><a href="page14.html">ラテン方陣</a></li>
+	        </ul>
+	    </aside> 
+	</section>
+<!-- -------------------------------------------------------------------------- -->
+    <section id="main">       
+    	<article><br>	
+            <h4>●盤面・セル・候補数字の表記法</h4>   
+            <p>
+			GNPXでは、外部表現と内部表現の２通りの表現方法を用います。<br><br>
+			【左図】外部表現はユーザインタフェイス用で、盤面の横１行～９行（r1～r9、以下同じ）、
+			縦１列～９列（c1～c9）、ブロックの１ブロック～９ブロック（b1～b9）と定義します。 <br><br>
+			【右図】内部表現はプログラミングに用いる表記法で、盤面の横０行～８行（右図のr0～r8、以下同じ）、
+			枡の縦０列～８列（c0～c8）、ブロックの０ブロック～８ブロック（b0～b8）と定義します。
+			また、各セルは左上から右下に向けて連続番号で表現します（内部表現のみ）。 <br> <br>
+			数独解法アルゴリズムの解説では全て内部表現を用い、ユーザに解析結果を示す部分のみ外部表現を用います。内部表現と外部表現の見た目は同じ形ですが、文脈で判断できます。</p>
+      
+			<h4>&nbsp;</h4>
+			<h4><img src="images/img13/boardrcbEng.jpg"></h4>
+			<p>
+			セル位置を表すのに「セルr2c3」あるいはセルを省略して「r2c3」の形式を用います。<br>
+			複数のセル位置は「r2c3 r2c4 r2c8」と表しますが、集約して「r2c348」と表す場合もあります。
+			これは省略形であるとともに、「行r2のc3,c4,c8」であることも表現しています。
+			省略形では「r23c45」「r12345c2」「b23」なども用います。
+			なお、セル群の表し方は一意ではないので、その点は柔軟に理解してください。<br><br>
+			候補数字は、先頭に#をつけて表します。例えば、あるセルの候補数字が１,5,7のときは”#157”と表します。
+			候補数字が3または5のときは()で括り#(35)と表します。候補数字が1と2と(35)のときは#12(35)と表します。
+			</p> 
+        </article>     
+       
+        <article id="house">
+            <h3>●ハウス</h3>   
+            <p>
+            数独のルールは、行・列・ブロックには同じ数字は入らず、ただ１箇所にのみに入ることです。
+            ここで、行・列・ブロックとして扱うのではなく、全て同じ制約条件と考えることができます。
+            GNPXでは、この制約に0から26までの番号をつけます。これらをハウスhouseと呼びます。<br>
+			・制約 0～ 8：行0～行8の制約<br>
+			・制約 9～17：列0～行8の制約<br>
+			・制約18～26：ブロック0～ブロック8の制約<br>
+			例えば、２つのセルについて、行・列・ブロックのいずれかについて同じである場合には「同じハウスに属している」と表現します。</p>
+			<p>
+            <img src="images/img13/houseEng.gif"></p>
+        </article>
+    </section>
+    
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+    <footer>
+        <p id="copyright"> copyright &copy; 2014-  GNPX. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 NiceLoop</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h4>●NiceLoop</h4>		   
+	<p>NiceLoopは、セル間の<a href="page25.html">強いリンクと弱いリンク</a>を繋げてループを作る解析アルゴリズムです。<br>
+	
+	<h4>（0）リンク連結</h4>	
+	セルに着目すると、セルに接続するリンクの組合せには次の３パターン（方向を含めると４とおり）があります。
+	ただし、リンク連結に意味がある（制約が伝搬して解析アルゴリズムが構成できる）ためには、次の条件を満たすことが必要です。
+	なお、以下では強いリンクを<strong>S</strong>、弱いリンクを<strong>W</strong>と表します。<br>
+	
+	<br>
+	【リンク連結条件】	
+	<ul>
+		<li>S-S:リンクの数字は異なる。<br></li>
+		<li>W-W：セルはbivalueで、リンクの数字は異なる。<br></li>
+		<li>S-W、W-S: リンクの数字は同じ<br></li>
+	</ul>
+	次の図では、左側にリンク連結条件を満たすリンク接続を示しています。<br>
+	対応する右図のように、左側から流入するリンクにより　￢b,b,￢a,a (￢:非,not)と制約すると、右側に流出するリンクおよびその先（セル）に制約が伝わります。
+	左から流入するとしましたが、右側から流入する場合にも、制約が伝搬することを確認してください。すなわち、リンク連結条件を満たす接続は双方向性を持ちます。</p>
+	
+	<p style="text-align:center">
+		<img src="images/img54/img54a.png">
+	</p>
+	
+	<br>
+	<p>着目セルから始めて、リンク連結条件を満たすリンク列が形成できたとします。</p>
+	【リンク列の制約の伝搬】
+	<ul>
+		<li>着目セルから流出するリンクが強いリンク(#a)で数字が￢a(not a)であれば、<br>
+		制約は伝搬し、リンク列の 強いリンク(#b)の下流側セルは数字はb、弱いリンク(#c)の上流側セルは数字cと確定する。<br><br></li>
+		<li>着目セルから流出するリンクが 弱いリンク(#a)で数字がaであれば、<br>
+		制約は伝搬し、リンク列の 強いリンク(#b)の下流側セルは数字はb、弱いリンク(#c)の上流側セルは数字cと確定する。<br><br></li>
+		<li>上記２つの前提を満たさないときは、着目セルからの制約は伝搬しない。<br></li>
+		<br>
+	</ul>
+	<p style="text-align:center">
+		<img src="images/img54/img54bEng.png">
+	</p>
+	<p>すなわち、リンク列ができたとき、最初の着目セルからの流出の条件を満たせば、リンク列に連なるリンクでは数字が確定することになります。
+	これらを用いて、解析アルゴリズムを組み立てます。</p>
+
+	<h4>（2）連続ループ</h4>	
+	<p>リンク列を延伸して起点セルに連結したとき、起点セルでもリンク連結条件が満たされる状態を<strong>連続ループ</strong>といいます。
+	連続ループでは、もはや起点セルは無意味で、ループ上の全てのセルが同等の性質を持ちます。</p>
+	<p style="text-align:center">
+		<img src="images/img54/img54cEng.png">
+	</p>
+	<p>連続ループでは、セルの数字は２種類に分類されます。
+	上の図は、次図の左のように○と●に分類されます。この分類が強弱リンクの関係に矛盾していないことを確認してください。
+	２種類に分類された数字は、一方が真で他方は偽です。ただし、どちらが真かは決定していません。
+	また、リンクの両端は必ず真と偽なので弱いリンクは強いリンクと同じ性質を持つことになります。
+	このとき、ループを壊すセル・数字に対してLockedとなります。
+	具体的には、&quot;弱いリンクのhouseでループ外のセル・数字&quot;(次図右△)、
+	および強いリンクが２つ接続するセル内の&quot;ループに関連しない数字&quot;(同▲)は除外できます。
+	これら(△と▲)が真とすると、連続ループ上の○と●が同時に偽となります。つまり△と▲に対しLockedであることがわかります。</p>
+		<br>
+	<p style="text-align:center">
+		<img src="images/img54/img54dEng.png">
+	</p>
+
+	<h4>（3）不連続ループ</h4>	
+	<p>リンク列を延伸して起点セルに連結したとき、起点セルでリンク連結条件が満たされない状態を“不連続ループ”といいます。
+	改めて整理すると、起点セルでは次のような状態です。<br><br>
+	【リンク連結不連続条件】
+	<ul>
+		<li>S-S：リンクの数字は同じ </li>
+		<li>W-W：リンクの数字は同じ</li>
+		<li>S-W、W-S:リンクの数字は異なる</li>	
+		<br>
+	</ul>
+	このとき、起点セルの数字をリンク列の制約が伝播しないように選ぶ必要があります。
+	つまり、起点セルでは制約が伝播する候補数字に対しLockedとなっています。
+	具体的には、起点セルの候補数字は次のように決まります。
+	<ul>
+		<li>S-S：リンクの数字aは同じ ⇒ 着目セルはaと確定</li>
+		<li>W-W：セルはbivalueでリンクの数字aは同じ ⇒ 着目セルは非aと確定</li>
+		<li>S-W、W-S:リンクの数字は異なる ⇒ （弱いリンクの数字b）着目セルは非bと確定</li>	
+		<br>
+	</ul>
+
+	</p>
+	<p style="text-align:center">
+		<img src="images/img54/img54eEng.png" style="width:750px; height:184px">
+	</p>
+
+	<p>NiceLoopの例です。</p>
+	
+	<img class="imgL" src="images/img54/img54f.png" style="width:700px; height:870px" >
+	<p class="newLine"><br>
+		47....3.99...4728...8.9...7...81..4..167.48...8..6..2.85..7...4.6.4.5..81.3...57.<br>
+		47....5.92...7361...3.9...7...56..9..613.47...5..2..6.52..3...6.3.1.2..51.9...24.<br>
+		......3...385.1.4.5..37..6..76..389...9...7...157..42..9..15..4.8.6.753...2......<br>
+		6.14..5.7.3.7..4..9..35.....6..1.3.415.....688.4.3..1.....94..2..2..3.4.4.6..21.3<br><br></p>
+	
+	
+		<h4>○NiceLoopm解析プログラム</h4>
+		<p>NiceLoopの解析アルゴリズムでは、<a href="page27.html#LinkCellAls">セルリンク</a>を使います。<br>
+		NiceLoopの解析は次の手順で行います。
+		<ul>
+			<li>NiceLoopのメイン関数では、最初にセルリンクの準備を行い、
+			次に制御の　①サイズ設定、②着目セル設定、③着目数字設定、④最初のリンク設定、⑤結果保存用のstackを準備して、
+			実際の探索を行う関数（_NL_Search）を呼びます。サイズはセル列の長さです。<br><br></li>
+			<li>実際の探索を行う関数（_NL_Search）は再帰関数です。</li>
+			<li>最初に、次数に達したかを調べ達している場合は即座に戻ります。</li>
+			<li>次数に達していない場合は、現在位置から、１リンク伸ばします。
+			伸ばすリンクは、前のリンク（と現在位置）からリンク接続条件を満たすリンクです。
+			リンク接続条件を満たすリンクの選択は、セルリンク管理クラスの列挙型関数（IEGet_CeCeSeq）で行います。</li>
+			<li>リンクを伸ばすとき、すでに使用済みのセルの管理は、前段階の探索関数で定義されたUsedCellsを用います。
+			このUsedCellsは、次段階に進む直前に前段階のものをコピーし、現段階分を追加します。
+			履歴管理用状態変数を再帰関数に持つことで、関数からの復帰時の状態復元が自動化されます。</li>
+			<li>リンクを伸ばしたとき、着目セルに達していれば、Niceloopの解として条件を満たすかをチェックします。<br><br></li>
+			<li>Niceloopの解チェック(_NL_CheckSolution)では、連続ループか不連続ループかを判定します。	</li>
+			<li>連続ループの場合には、弱いリンクを強いリンクに変えるための除外と、SSセルの除外を調べます。</li>
+			<li>不連続ループでは、不連続セルの除外数字を調べます。</li>
+			<li>除外できる数字があるとき、Niceloopの解となります。</li>
+		</ul>
+		
+		NiceLoopが成立する場面では、多くの場合、同時に多数のNiceLoopが成立します。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class NiceLoopGen: AnalyzerBaseV2{
+    private int         S=1;
+    private GNPX_AnalyzerMan pAnMan;
+    private CellLinkMan CeLKMan;
+    public  int         NiceLoopMax{ get{ return GNumPzl.GMthdOption[&quot;NiceLoopMax&quot;].ToInt(); } }
+
+    public NiceLoopGen( GNPX_AnalyzerMan pAnMan ): base(pAnMan){
+        this.pAnMan=pAnMan;
+        CeLKMan=new CellLinkMan(pAnMan);
+    }
+
+    public override void Initialize(){ 
+        CeLKMan.Initialize();
+    }
+
+    public bool NiceLoop( ){  //深さ優先探索
+        CeLKMan.PrepareCellLink(1+2);    //strongLink,weakLink生成
+
+        for( int szCtrl=4; szCtrl&lt;NiceLoopMax; szCtrl++ ){   //サイズの小さいNiceLoopから探す
+            foreach( var P0 in pBDL.Where(p=&gt;(p.No==0)) ){   //起点セル
+                foreach( var no in P0.FreeB.IEGet_BtoNo() ){ //始めの数字
+                    foreach( var LKH in CeLKMan.IEGetRcNoType(P0.rc,no,3) ){   //最初のリンク
+                        if( AnMan.CheckTimeOut() ) return false;
+                        var SolStack=new Stack&lt;UCellLink&gt;();
+                        SolStack.Push(LKH); //▼Push                     
+                        //___Debug_Print_NLChain(SolStack); //▼
+                        Bit81 UsedCells=new Bit81(LKH.rc2);  //使用済みセルのビット表現
+                        _NL_Search(LKH,LKH,SolStack,UsedCells,szCtrl-1);
+                        if(SolCode&gt;0) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private bool _NL_Search( UCellLink LK0, UCellLink LKpre, Stack&lt;UCellLink&gt; SolStack, Bit81 UsedCells, int szCtrl ){
+        if( szCtrl&lt;=0 ) return false;
+
+        foreach( var LKnxt in CeLKMan.IEGet_CeCeSeq(LKpre) ){  //連結条件を満たすリンクコレクションの反復処理
+            int rc2Nxt = LKnxt.rc2;
+            if( UsedCells.IsHit(rc2Nxt) ) continue;  //(次セルは既に使用)(UsedCellsは起点セルを含まない)
+
+            { //===== Chain Search =====
+                SolStack.Push(LKnxt);//▼Push(試行:リンク延伸）  
+                //___Debug_Print_NLChain(SolStack); //▼
+                if( rc2Nxt==LK0.rc1 && szCtrl==1 ){
+                    if( SolStack.Count&gt;2 ){  //ループが形成された(次セルは起点セルと一致）
+                        int SolType=_NL_CheckSolution(LK0,LKnxt,SolStack,UsedCells);//解チェック
+                        if( SolType&gt;0 ){          
+                            if( SolInfoDsp ) _NL_SolResult(LK0,LKnxt,SolStack,SolType);
+                            if( !AnMan.SnapSaveGP(true) )  return true;
+                        }
+                    }
+                }
+                else{
+                    Bit81 UsedCellsNxt = UsedCells|(new Bit81(rc2Nxt));   //新しい&quot;使用済みセルのビット表現&quot;を作成
+                    _NL_Search(LK0,LKnxt,SolStack,UsedCellsNxt,szCtrl-1); //次段階の探索(recursive call)
+                    if(SolCode&gt;0 ) return true;
+                }
+                SolStack.Pop();     //▲Pop(不成立:リンク延伸取消し）
+            } //-----------------------------
+        }  
+        return false;
+    }
+
+    private int _NL_CheckSolution( UCellLink LK0, UCellLink LKnxt, Stack&lt;UCellLink&gt; SolStack, Bit81 UsedCells ){ 
+        bool SolFond=false;
+        int SolType = CeLKMan.Check_CellCellSequence(LKnxt,LK0)? 1: 2; //1:Continuous 2:DisContinuous
+
+        if(SolType==1){ //◆continuous
+            //=== 弱いリンクを強いリンクに変えるための除外
+            List&lt;UCellLink&gt; SolLst=SolStack.ToList();
+            Bit81 UsedCellsT = UsedCells|(new Bit81(LK0.rc1));
+            foreach( var L in SolLst ){
+                int noB=1&lt;&lt;L.no;
+                foreach( var P in pBDL.IEGetCellInHouse(L.tfx,noB) ){
+                    if( UsedCellsT.IsHit(P.rc) ) continue;
+                    P.CancelB |= noB;　　//除外
+                    SolFond=true;
+                }
+            }
+
+            //=== SSセルでは、他の数字は入らない
+            SolLst.Reverse();
+            SolLst.Add(LK0);                           
+            var LKpre=SolLst[0];
+            foreach( var LK in SolLst.Skip(1) ){
+                if( LKpre.type==1 && LK.type==1 ){ //SSセル
+                    UCell P=pBDL[LK.rc1];
+                    int noB = P.FreeB.DifSet((1&lt;&lt;LKpre.no)|(1&lt;&lt;LK.no));
+                    if( noB&gt;0 ){ P.CancelB=noB; SolFond=true; }
+                }
+                LKpre=LK;
+            }
+            if(SolFond) SolCode=2;
+        }
+        else if(SolType==2){           　//◆discontinuous
+            int dcTyp= LK0.type*10+LKnxt.type;
+            UCell P=LK0.UCe1;
+            switch(dcTyp){
+                case 11: 
+                    P.FixedNo=LK0.no+1; //セル数字確定
+                    P.CancelB=P.FreeB.DifSet(1&lt;&lt;(LK0.no));
+                    SolCode=1; SolFond=true; //(1:確定）
+                    break;
+                case 12: P.CancelB=1&lt;&lt;LKnxt.no; SolCode=2; SolFond=true; break;//(2:候補から除外）
+                case 21: P.CancelB=1&lt;&lt;LK0.no; SolCode=2; SolFond=true; break;
+                case 22: 
+                    if( LK0.no==LKnxt.no ){ P.CancelB=1&lt;&lt;LK0.no; SolFond=true; SolCode=2; }
+                    break;
+            }
+        }
+        if(SolFond){ return SolType; }
+        return -1;
+    }
+
+    private void _NL_SolResult( UCellLink LK0, UCellLink LKnxt, Stack&lt;UCellLink&gt; SolStack, int SolType ){          
+        string st = &quot;&quot;;
+
+        List&lt;UCellLink&gt; SolLst=SolStack.ToList();
+        SolLst.Reverse();
+        SolLst.Add(LK0);
+
+        foreach( var LK in SolLst ){
+            int noB=(1&lt;&lt;LK.no);
+            UCell P1=pBDL[LK.rc1], P2=pBDL[LK.rc2];
+            P2.SetCellBgColor(SolBkCr);
+            if( LK.type==S ){ P1.SetNoBColor(noB,AttCr); P2.SetNoBColor(noB,AttCr3); }
+            else{             P2.SetNoBColor(noB,AttCr); P1.SetNoBColor(noB,AttCr3); }
+        }
+
+        if( SolType==1 ) st = &quot;Nice Loop(Continuous)&quot;;  //◆continuous
+        else{                                           //◆discontinuous
+            st = &quot;Nice Loop(Discontinuous) r&quot;+(LK0.rc1/9+1)+&quot;c&quot;+(LK0.rc1%9+1);
+            int dcTyp= LK0.type*10+LKnxt.type;
+            switch(dcTyp){
+                case 11: st+=&quot; is &quot;+(LK0.no+1); break;
+                case 12: st+=&quot; is not &quot;+(LKnxt.no+1); break;
+                case 21: st+=&quot; is not &quot;+(LK0.no+1); break;
+                case 22: st+=&quot; is not &quot;+(LK0.no+1); break;
+            }
+            LK0.UCe1.SetCellBgColor(SolBkCr2);
+        }
+
+        Result = st;
+        ResultLong = st+&quot;\r&quot;+_ToRCSequenceString(SolStack);
+    }
+    private string _ToRCSequenceString( Stack&lt;UCellLink&gt; SolStack ){    
+        if( SolStack.Count==0 ) return (&quot;[rc]:-&quot;);
+        List&lt;UCellLink&gt; SolLst=SolStack.ToList();
+        SolLst.Reverse();
+
+        UCellLink LK0=SolLst[0];
+        UCell     P0 =pBDL[LK0.rc1];
+        string po = &quot;[rc]:[&quot;+(P0.rc/9*10+(P0.rc%9)+11)+ &quot;]&quot;;
+        foreach( var LK in SolLst ){
+            UCell  P1 = pBDL[LK.rc2];
+            string mk = (LK.type==1)? &quot;=&quot;: &quot;-&quot;;
+            po += mk+(LK.no+1)+mk+&quot;[&quot;+(P1.rc/9*10+(P1.rc%9)+11)+ &quot;]&quot;;
+        }
+        return po;
+    }
+
+    private int ___NLCC=0;
+    private void ___Debug_Print_NLChain( Stack&lt;UCellLink&gt; SolStack ){
+        Console.WriteLine(&quot;&lt;{0}&gt; {1}&quot;, ___NLCC++, _ToRCSequenceString(SolStack) );
+    }
+}</small></pre>
+
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

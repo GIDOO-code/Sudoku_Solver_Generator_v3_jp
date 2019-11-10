@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# ALS</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- ======================================================================== -->		
+<section id="main">
+	<article><br>
+		<h4>●ALS</h4>
+		<p>数独の高度な解法では、ALS（Almost Locked Set）が使われます。</p>
+		<h4>(1)ALS</h4>
+		<p>Locked Setは、同じhouseに属する&quot;ｎ個のセルにｎ個の候補数字がある&quot;状態で、
+		どのセルがどの数字かは決まらないが、全体としてLocked状態です。
+		ALSは同じhouseに属する&quot;ｎ個のセルにｎ+1個の候補数字&quot;がある&quot;ほぼLocked&quot;状態です。
+		ALS外で数字が確定しALSから数字が除かれると、ALSはLockedSetになります。
+		これだけでは解法として成立しませんが、何かと組合せて様々な解析アルゴリズムが作れます。
+		最小のALSは、&quot;１セル２候補数字&quot;です。</p>
+		
+		<p style="text-align:center">
+			<img src="images/imgALS/imgALSaEng.png" width="512" height="180">
+		</p><br>
+		
+		<h4>(2)RCC</h4>
+		<p>２つのALSの関係する解析アルゴリズムでは、共通の数字が制限する効果を利用します。<br><br>
+		次の図には２つのALSがあり（青と緑の点線枠）、これらが次の条件を満たすとき、その数字をRCC (Restricted Common Candidate:制限された共通候補）と呼びます。<br><br>
+		　<strong>条件:重なりのない2つのALSに共通の数字があり、それらが同じhouse内にある。<br>
+		(オレンジ点線枠、ALSのhouseとは異なる）。</strong><br>
+		RCCは同じhouseに属するので、RCCは一方のALSのみにあり、他方のALSはRCC数字含みません。ただし、どちらのALSにあるかは決定していません。<br>
+		ここに何らかの条件が加わり、RCCが一方のALSで真(&quot;RCCがこのALSにある&quot;）となると、
+		他方のALSでは偽(&quot;RCCはこのALSにない&quot;）となります。偽となったALSでは&quot;ｎ個のセルにｎ個の候補数字&quot;であり、 ALSはLockedSetになります。</p>
+
+		<p style="text-align:center">
+			<img src="images/imgALS/imgALSb.png" >
+		</p>
+
+		<p><br>
+		次の右図は、2つのALS間にRCCが2つあるケースです（doubly linked)。
+		RCCは一方のALSにのみあります。doublylinkedの場合は２つのRCCが一方のALSに片寄ってあることはなく、
+		それぞれのALSにひとつづつあります。ただし、どのRCCがどちらのALSにあるかは、決定していません。</p>
+
+		<p style="text-align:center">
+			<img src="images/imgALS/imgALSc.png" >
+		</p>
+		
+		<p><br>
+		また、ALS-RCC-ALSをRCCで結ばれたALSのリンクと呼び、これを連続して繋いでALSの連が作れます。</p>
+
+		<p style="text-align:center">
+			<img src="images/imgALS/imgALSd.png" >
+		</p>
+	
+		<h4>(3)ALSクラス(UALS)</h4>
+		<p>解析アルゴリズムでALSを扱うために、ALSクラス(UALS)で用意しました。
+		要素は、ALS構成セルのコレクション(UCellLst)、セル数（Size）、house番号(tfx,0-27）、要素数字(FreeB)、
+		ALSレベル（Level、FreeB数-セル数）、ALSの行列ブロックのビット表現（rcbDir)です。
+		また、行・列・ブロックのビット表現はプロパティで定義しています。<br>
+		このほかにALSのチェインを求めるときに用いる作業変数をいくつか持っています。<br>
+		コンストラクターでは、ALSの要素を定義し、行列ブロックのビット表現とALS構成セルのビット表現を生成します。<br>
+		関数類はCompareToと表示用の関数を用意しています。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public class UALS: IComparable{
+    static public GNPZ_Analyzer pSA;
+    static public List&lt;UCell&gt;   pBDL;
+    public int               ID;
+    public readonly int      Size;  //セル数
+    public readonly int      tfx;   //house番号
+    public readonly int      FreeB; //ALSの要素数字
+    public readonly int      Level; //FreeB数-セル数
+    public readonly List&lt;UCell&gt; UCellLst = new List&lt;UCell&gt;();    //ALS構成セル
+
+    public bool     singler;        //ALSManで設定（ALSの構成が唯一）
+    public int      rcbDir;         //ALSの行列ブロックのビット表現
+    public int      rcbRow{ get{ return (rcbDir&0x1FF); } }      //行のビット表現
+    public int      rcbCol{ get{ return ((rcbDir&gt;&gt;9)&0x1FF); } } //列のビット表現
+    public int      rcbBlk{ get{ return ((rcbDir&gt;&gt;18)&0x1FF); } }//ブロックのビット表現
+    public Bit81    B81;            //ALSセル位置のビット表現
+    
+    //作業変数//(ALS Chainで用いる)
+    public bool     LimitF=false;       
+    public List&lt;LinkAlsAls&gt;  ConnLst;   
+    public int      RCC;
+    public List&lt;int&gt; LockedNoDir;
+
+    public UALS( int ID, int Size, int tfx, int FreeB, List&lt;UCell&gt; UCellLst ){
+        this.ID        = ID;
+        this.Size      = Size;
+        this.tfx       = tfx;
+        this.FreeB     = FreeB;
+        this.Level     = FreeB.BitCount()-Size;
+        this.B81       = new Bit81();
+        this.rcbFilter = new Bit81();
+        this.UCellLst  = UCellLst;
+        this.LockedNoDir = null;
+
+        UCellLst.ForEach( P =&gt;{
+            rcbDir |= ( (1&lt;&lt;(P.b+18)) | (1&lt;&lt;(P.c+9)) | (1&lt;&lt;(P.r)) );     
+            rcbFilter |= pSA.ConnectedCells[P.rc];
+            B81.BPSet(P.rc);
+        } );
+    }
+
+    public override int GetHashCode(){ return (B81.GetHashCode()| FreeB.GetHashCode()); }
+    public int CompareTo( object obj ){
+        UALS UB = obj as UALS;
+        if( this.Level!=UB.Level ) return (this.Level-UB.Level);
+        if( this.Size!=UB.Size )   return (this.Size-UB.Size);
+        if( this.tfx!=UB.tfx )     return (this.tfx-UB.tfx);
+        return (this.ID-UB.ID);
+    }
+
+    public List&lt;UCell&gt; GetRestCells( int selB ){
+        return pBDL.IEGet(tfx,selB).Where(P=&gt;!B81.IsHit(P.rc)).ToList();
+    }
+
+    public override string ToString(){
+        string po = &quot;◇ UALS &quot;+ID+&quot; ◇  tfx:&quot;+tfx +&quot; Size:&quot;+Size +&quot; Level:&quot;+Level;
+        po += &quot; NoB:&quot; + FreeB.ToBitString(9) + &quot;\r&quot;;
+        po +=       &quot;         B81 &quot;+B81+&quot;\r&quot;;
+        for( int k=0; k&lt;UCellLst.Count; k++){
+            po += &quot;------&quot;;
+            int rcW = UCellLst[k].rc;
+            po += &quot; rc:&quot; + ((rcW/9+1)*10+(rcW%9+1)).ToString();
+            po += &quot; FreeB:&quot; + UCellLst[k].FreeB.ToBitString(9);
+            po += &quot; rcb:B&quot; + (rcbBlk).ToBitString(9);
+            po += &quot; c&quot; + rcbCol.ToBitString(9);
+            po += &quot; r&quot; + rcbRow.ToBitString(9);
+            po += &quot; rcbFilter:&quot; + rcbFilter.ToString();
+            po += &quot;\r&quot;;
+        }
+        return po;
+    }
+
+    public string ToStringRCN(){
+        string st=&quot;&quot;;
+        UCellLst.ForEach( p =&gt;{  st += &quot; r&quot;+(p.r+1) + &quot;c&quot;+((p.c)+1); } );
+        st = st.ToString_SameHouseComp()+&quot; {#&quot;+FreeB.ToBitStringN(9)+&quot;}&quot;;
+        return st;
+    }
+}</small></pre>
+
+		<h4>(4)ALS管理クラス(ALSMan)</h4>
+		<p>解析アルゴリズムでは、ALSクラスを素のまま用いるのではなく、ALSの管理とALSを操作する機能をまとめたクラス(ALSMan)を用います。
+		ALSManの要素は、２つの外部参照とALSのコレクションのみです。
+		関数ALS_Search[13-42]は、現状態を走査してALSのコレクションを求めます。引数のnPlsにより、プラス1からプラスｎPlsまでのALSを求めます。
+		0〜26のhouse番号を設定し、そのhouse内の未確定セルのリストを求めます。
+		次にサイズを設定[]して、組合せでセル群を選択し、ALSのサイズ条件（セル数と数字）を調べます。
+		なお、異なるhouseで生成したALSが同じ構成となる場合があります。その場合もALSLstに登録します。
+		2つ目以降のALSでは、singler=false としています。
+		最後にサイズ、house順にソートします。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public class ALSMan{
+    private GNPZ_Analyzer pSA;
+    private List&lt;UCell&gt;   pBDL;
+    public List&lt;UALS&gt;     ALSLst;
+
+    public ALSMan( GNPZ_Analyzer pSA ){
+        this.pSA = pSA;
+        UALS.pSA = pSA;
+    }
+    public int ALS_Search( int nPls ){
+        if( ALSLst!=null ) return ALSLst.Count();
+        this.pBDL = pSA.pBDL;
+        UALS.pBDL = pSA.pBDL;
+        int ALSSizeMax = GNumPzl.ALSSizeMax;
+
+        int mx=0; //仮のID、後に再設定
+        ALSLst = new List&lt;UALS&gt;();
+        for( int nn=1; nn&lt;=nPls; nn++ ){
+            for( int tf=0; tf&lt;27; tf++ ){
+                List&lt;UCell&gt; P=pBDL.IEGet(tf,0x1FF).ToList();
+                if( P.Count&lt;1 ) continue;
+                int szMax = Math.Min(P.Count,8-nn);
+                szMax = Math.Min(szMax,ALSSizeMax);       //【変更】ALSサイズ最大値を制限
+                for( int sz=1; sz&lt;=szMax; sz++ ){
+                    Combination cmb = new Combination(P.Count,sz);
+                    while( cmb.Successor() ){                        
+　　　　　　　　　　　　　　　　　　　　int FreeB=0;
+　　　　　　　　　　　　　　　　　　　　Array.ForEach(cmb.Cmb, q=> FreeB|=P[q].FreeB );
+　　　　　　　　　　　　　　　　　　　　if( FreeB.BitCount()!=(sz+nn) ) continue;
+　　　　　　　　　　　　　　　　　　　　List<UCell> Q=new List<UCell>();
+　　　　　　　　　　　　　　　　　　　　Array.ForEach(cmb.Cmb, q=> Q.Add(P[q]) );
+
+　　　　　　　　　　　　　　　　　　　　//同じ構成のALSの存在チェック⇒A.singler=true:最初 false;2つ目以降
+　　　　　　　　　　　　　　　　　　　　UALS UA=new UALS(mx,sz,tf,FreeB,Q);
+　　　　　　　　　　　　　　　　　　　　int hs= UA.GetHashCode();
+　　　　　　　　　　　　　　　　　　　　if( singlyMan.Count>0 && singlyMan.Contains(hs) ) UA.singler=false;
+　　　　　　　　　　　　　　　　　　　　singlyMan.Add(hs);
+
+　　　　　　　　　　　　　　　　　　　　mx++;
+　　　　　　　　　　　　　　　　　　　　ALSLst.Add(UA);
+　　　　　　　　　　　　　　　　}
+                }
+            }
+        }
+
+        ALSLst.Sort();
+        int ID=0;
+        ALSLst.ForEach(P=&gt; P.ID=ID++ );
+        //ALSLst.ForEach(P=&gt;Console.WriteLine(P));
+        return ALSLst.Count();  
+    }
+            
+    public int  GetALSRCC( UALS UA, UALS UB ){           
+        if( (UA.FreeB&UB.FreeB)==0 )           return 0; //共通数字なし
+        if( !(UA.B81&UB.B81).IsZero() )    return 0; //範囲が重なる
+        if( (UA.rcbFilter&UB.B81).IsZero() ) return 0; //House接触なし 
+
+        int RCC=0, Dir=UA.rcbDir&UB.rcbDir;
+        //rcbDir |= ( (1&lt;&lt;(P.b+18)) | (1&lt;&lt;(P.c+9)) | (1&lt;&lt;(P.r)) );
+        foreach( int tfx in Dir.IEGet_BtoNo(27) ){
+            Bit81 ComH = pSA.HouseCells[tfx];
+            int FrAi=0, FrAo=0, FrBi=0, FrBo=0;
+            UA.UCellLst.ForEach(P=&gt;{
+                if( ComH.IsHit(P.rc) ) FrAi |= P.FreeB;
+                else                   FrAo |= P.FreeB;
+            } );
+            UB.UCellLst.ForEach(P=&gt;{
+                if( ComH.IsHit(P.rc) ) FrBi |= P.FreeB;
+                else                   FrBo |= P.FreeB;
+            } );
+            RCC |= (FrAi.DifSet(FrAo)) & (FrBi.DifSet(FrBo));    //RCC
+        }
+        return RCC;
+    }
+
+    public void Create_ALS2ALS_Link( bool doubly ){
+        var cmb = new Combination( ALSLst.Count, 2 );
+        while (cmb.Successor()) {
+            UALS UA = ALSLst[cmb.Cmb[0]];
+            UALS UB = ALSLst[cmb.Cmb[1]];
+
+            int RCC = GetALSRCC( UA, UB );
+            if( RCC==0 ) continue;
+            if( !doubly && RCC.BitCount()!=1 ) continue;
+
+            if( UA.ConnLst==null )  UA.ConnLst=new List&lt;LinkAlsAls&gt;();
+            if( UB.ConnLst==null )  UB.ConnLst=new List&lt;LinkAlsAls&gt;();
+            foreach( var no in RCC.IEGet_BtoNo() ){ //RCCの数だけ登録
+                LinkAlsAls LKX=new LinkAlsAls(UA,UB,RCC,no);
+                if( !UA.ConnLst.Contains(LKX) ) UA.ConnLst.Add(LKX);
+                LKX=new LinkAlsAls(UB,UA,RCC,no);
+                if( !UB.ConnLst.Contains(LKX) ) UB.ConnLst.Add(LKX);
+            }
+        }
+    }   
+}</small></pre>
+	</article>
+</section>
+	
+<!-- ======================================================================== -->				
+		
+	
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

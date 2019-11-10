@@ -1,0 +1,259 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# Bit81</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- ======================================================================== -->		
+<section id="main">
+	<article><br>
+		<h4>●Bit81</h4>
+		<p>数独81セルの状態の、１項目についてまとめたクラスです。81セル分をビット表現しています。要素は、識別子(ID)とサイズ３の整数配列(_BP)ですが、これらに直接アクセスすることはほとんどなく、様々な関数経由で情報を扱います。 
+		主要な関数のいくつかのみ実装を示します。{...}は実装形を省略していますが、名前の通りの機能であり推測できるでしょう。</p>
+		<pre class="prettyprint linenums lang-C "><small> public class Bit81{
+    public int   ID;
+    public readonly int[] _BP;
+
+    public int Count{ get{ return BitCount(); } }
+
+    public Bit81( ){ _BP=new int[3]; }
+    public Bit81( int rc ):this(){ BPSet(rc); }
+    public Bit81( Bit81 P ):this(){
+        this._BP[0]=P._BP[0]; this._BP[1]=P._BP[1]; this._BP[2]=P._BP[2]; 
+    }
+    public Bit81( List&lt;UCell&gt; X ):this(){
+        X.ForEach(P=&gt;{ _BP[P.rc/27] |= (1&lt;&lt;(P.rc%27)); } );
+    }
+    public Bit81( List&lt;UCell&gt; X, int F, int FreeBC=-1　):this(){
+        if( FreeBC&lt;0 ) X.ForEach(P=&gt;{ if( (P.FreeB&F)&gt;0 ) _BP[P.rc/27] |= (1&lt;&lt;(P.rc%27)); } );
+        else X.ForEach(P=&gt;{ if( (P.FreeB&F)&gt;0 && P.FreeBC==FreeBC ) _BP[P.rc/27] |= (1&lt;&lt;(P.rc%27)); } );
+    }
+    public Bit81( List&lt;UCell&gt; X, int noB ):this(){
+        X.ForEach(P=&gt;{ if( (P.FreeB&noB)&gt;0 ) _BP[P.rc/27] |= (1&lt;&lt;(P.rc%27)); } );
+    }
+
+    public void Clear( ){ _BP[0]=_BP[1]=_BP[2]=0; }
+    public void BPSet( int rc ){ _BP[rc/27] |= (1&lt;&lt;(rc%27)); }
+    public void BPSet( Bit81 sdX ){ for( int nx=0; nx&lt;3; nx++ ) _BP[nx] |= sdX._BP[nx]; }               
+    public void BPReset( int rc ){ _BP[rc/27] &= ((1&lt;&lt;(rc%27))^0x7FFFFFF); }
+
+    public int  AggregateFreeB( List&lt;UCell&gt; XLst ){
+        return this.IEGet_rc().Aggregate(0,(Q,q)=&gt;Q|XLst[q].FreeB);
+    }
+    public Bit81 Copy(){ Bit81 Scpy = new Bit81(); Scpy.BPSet(this); return Scpy; }
+
+    static public Bit81 operator|( Bit81 sdA, Bit81 sdB ){
+        Bit81 sdC = new Bit81();
+        for( int nx=0; nx&lt;3; nx++ ) sdC._BP[nx] = sdA._BP[nx] | sdB._BP[nx];
+        return sdC;
+    }
+    static public Bit81 operator&( Bit81 sdA, Bit81 sdB ){
+        Bit81 sdC = new Bit81();
+        for( int nx=0; nx&lt;3; nx++ ) sdC._BP[nx] = sdA._BP[nx]&sdB._BP[nx];
+        return sdC;
+    }
+    static public Bit81 operator^( Bit81 sdA, Bit81 sdB ){
+        Bit81 sdC = new Bit81();
+        for( int nx=0; nx&lt;3; nx++ ) sdC._BP[nx] = sdA._BP[nx] ^ sdB._BP[nx];
+        return sdC;
+    }
+    static public Bit81 operator^( Bit81 sdA, int sdbInt ){
+        Bit81 sdC = new Bit81();
+        for( int nx=0; nx&lt;3; nx++ ) sdC._BP[nx] = sdA._BP[nx] ^ sdbInt;
+        return sdC;
+    }
+    static public Bit81 operator-( Bit81 sdA, Bit81 sdB ){
+        Bit81 sdC = new Bit81();
+        for( int nx=0; nx&lt;3; nx++ ) sdC._BP[nx] = sdA._BP[nx] & (sdB._BP[nx]^0x7FFFFFF);
+        return sdC;
+    }
+
+    static public bool operator==( Bit81 sdA, Bit81 sdB ){
+        try{
+            for( int nx=0; nx&lt;3; nx++ ){ if( sdA._BP[nx]!=sdB._BP[nx] ) return false; }
+            return true;
+        }
+        catch( NullReferenceException ){ return true; }
+    }
+    static public bool operator!=( Bit81 sdA, Bit81 sdB ){
+        try{
+            for( int nx=0; nx&lt;3; nx++ ){ if( sdA._BP[nx]!=sdB._BP[nx] ) return true; }
+            return false;
+        }
+        catch( NullReferenceException ){ return false; }
+    }
+
+    public override int GetHashCode(){ return ( _BP[0]^ (_BP[1]*1301)^ (_BP[2]*6577) ); }
+    public int CompareTo( Bit81 sdB ){
+        if( this._BP[0]==sdB._BP[0] )  return (this._BP[0]-sdB._BP[0]);
+        if( this._BP[1]==sdB._BP[1] )  return (this._BP[1]-sdB._BP[1]);
+        return (this._BP[2]-sdB._BP[2]);
+    }
+
+    public bool IsHit( int rc ){ return ((_BP[rc/27]&(1&lt;&lt;(rc%27)))&gt;0); }
+    public bool IsHit( Bit81 sdk ){
+        for( int nx=0; nx&lt;3; nx++ ){
+            if( (_BP[nx]&sdk._BP[nx])&gt;0 )  return true;
+        }
+        return false;
+    }
+    public bool IsHit( List&lt;UCell&gt; LstP ){ return LstP.Any(P=&gt;(IsHit(P.rc))); }
+
+    public bool IsZero( ){
+        for( int nx=0; nx&lt;3; nx++ ){
+            if( _BP[nx]&gt;0 )  return false;
+        }
+        return true;
+    }    
+    public override bool Equals( object obj ){
+        Bit81 A = obj as Bit81;
+        for( int nx=0; nx&lt;3; nx++ ){ if( A._BP[nx]!=_BP[nx] ) return false; }
+        return true;
+    }       
+    public int  BitCount( ){
+        int bc = _BP[0].BitCount() + _BP[1].BitCount() + _BP[2].BitCount();
+        return bc;
+    } 
+    
+    public int FindFirstrc(){
+        for( int rc=0; rc&lt;81; rc++ ){
+            if( this.IsHit(rc) ) return rc;
+        }
+        return -1;
+    }
+    public List&lt;int&gt; ToList(){
+        List&lt;int&gt; rcList = new List&lt;int&gt;();
+        for( int n=0; n&lt;3; n++ ){
+            int bp = _BP[n];
+            for( int k=0; k&lt;27; k++){
+                if( (bp&(1&lt;&lt;k)) &gt; 0 ) rcList.Add(n*27+k);
+            }
+        }
+        return rcList;
+    }
+
+    public void CompressRow3( out int r9c3, out int c9r3 ){
+        int r, c, b;
+        r9c3=0;
+        c9r3=0;
+
+        for( int n=0; n&lt;3; n++ ){
+            int bp = _BP[n];
+            for( int k=0; k&lt;27; k++){
+                if( ((bp&gt;&gt;k)&1)==0 )  continue;
+                r = k/9 + n*3;
+                c = k%9;
+                b = (r/3*3+c/3);
+                r9c3 |= 1&lt;&lt;(b*3+c%3);
+                c9r3 |= 1&lt;&lt;(b*3+r%3);
+            }
+        }
+    }
+    public override string ToString(){
+        string st=&quot;&quot;;
+        for( int n=0; n&lt;3; n++ ){
+            int bp =_BP[n];
+            int tmp=1;
+            for( int k=0; k&lt;27; k++){
+                st += ((bp&tmp)&gt;0)? ((k%9)+0).ToString(): &quot;.&quot;; //内部表現
+            //  st += ((bp&tmp)&gt;0)? ((k%9)+1).ToString(): &quot;.&quot;; //外部表現
+                tmp = (tmp&lt;&lt;1);
+                if( k==26 )         st += &quot;■&quot;;
+                else if( (k%9)==8 ) st += &quot; &quot;;
+            }
+        }
+        return st;
+    }
+    public string ToRCString(){
+        string st=&quot;&quot;;
+        for( int n=0; n&lt;3; n++ ){
+            int bp=_BP[n];
+            for( int k=0; k&lt;27; k++){
+                if( (bp&(1&lt;&lt;k))==0 )  continue;
+                int rc = n*27+k;
+                st += &quot; [&quot;+(rc/9*10+rc%9+11)+&quot;]&quot;;
+            }
+        }
+        return st;
+    }
+}</small></pre>
+   		<p>
+  		このクラスは以下の解析アルゴリズムで大活躍します。例えば、「盤面中で候補数字no(内部表現）を含むセルのビット表現」は、次の1行のコードで求まります。</p>		
+  		<p>
+　Bit81 A= new Bit81(pBDL,(1&lt;&lt;no)))；</p>
+   		<p>
+  		また、rcにあるセル（以下セル[rc]と表記）と行・列・ブロックが関連しているセル位置ConnectedCells[rc]を事前に求めておきます（これは先験的に決まる）。
+  		ここでセル[rc]が数字noと決まったとすると</p>
+  		
+  		<p>
+　A & ConnectedCells[rc]；</p>
+   		<p>
+  		でビットが立っている位置のセルの候補数字からnoが除外できます。ビット表現により、これらの演算が表面上繰返し計算なしで実行できます。
+  		もちろんBit81の関数の中では繰返し計算は行っていますが、そのことを意識することなく、&amp;演算の”共通部分を求める”というレベルで考えれば済みます。
+  		これは抽象化により考えるレベルを上げることの一環ですが、同時にプログラムのバグが発生し難いという、現実的な利点もあります。</p>
+  	  		<p>
+  			ToString（override関数）は、開発・デバッグ用途の関数です。Bit81のオブジェクトに適用して、内部表現の文字列を求めます。たとえば、次のように使います。<br><br>
+　Bit81 X= new Bit81(0*9+1) | new Bit81(2*9+4) | new Bit81(5*9+7) );<br>
+　Console.WriteLine(X);</p>
+   		<p>出力は次のようになります。開発・デバッグ用の関数は、道具や測定器に相当するものですので、手間を惜しまず作っておくと開発の効率が上がります。</p>
+   		<p>
+.1....... ......... ....4....■......... ......... .......7.■......... ......... .........■
+   		</p>
+	
+<!-- ======================================================================== -->				
+		
+	</article>
+</section>
+	
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

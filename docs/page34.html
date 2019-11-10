@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 X-Wing（Fish)</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<p>数独解析アルゴリズムを理解するには、なるべく早い段階で<a href="page13.html#house" >House</a>に慣れるとよいでしょう。
+		以下のアルゴリズム解説でも、具体的な数独盤面ではなく、制約関係のHouseで行います。</p>
+		
+		<h4>●X-Wing（Fish)</h4>
+		<p>数字Xに着目したとき、数字Xが次のように配置されているとします。列c0では数字Xの位置は行ｒ01c0のどちらかであり、列c1でも行ｒ01c1のどちらかとします。このとき、セルr0cx(○印）では数字Xは候補数字から除外できます。これはr01c01の４つのセルが数字Xに関してLocked(限定状態）にあることによります。<br></p>
+		
+		<img class="imgL" src="images/img34/img34a.png">
+		<p><small>X-Wing<br>
+		BaseSet(実線)の列では2つのセルのどちらかが数字X。CoverSet（破線）はBaseSetを完全に含む。
+		また、CoverSetはその他にセル(丸印)を含んでいる。丸印の位置に数字Xがあると、BaseSetに数字Xを配置できない。
+		丸印の位置の数字Xは除外される。（BaseSet、CoverSetは以下で説明）</small></p>
+
+		<p class="newLine"><br></p>
+		<img class="imgL" src="images/img34/img34b.png">
+		<p><small>X-Wingの例<br>
+		数字4に着目すると、BaseSet(r57)、CoverSet(c26)のX-Wing成立。R47C2のセルから数字4は除外される。</small></p>
+		<p class="newLine">4....9.5.23..58.67...4.7.........3253.2....8.5.1...7.....89....9......7..1.72..46</p>
+
+		<p>X-Wingは「Fish」の別名称を用いることもあります。また、3次以上のFish にも名前がついています。以下では、より一般的に解説するので、全てFishを用います。</p>
+		<ul type="none">
+			<li>2次: X-Wing</li>
+			<li>3次: SwordFish</li>
+			<li>4次: JellyFish</li>
+			<li>5次: Squirmbag</li>
+			<li>6次: Whale</li>
+			<li>7次: Leviathan</li>
+		</ul>
+		<p>単に数独の全数字配列を求めるだけであれば、5次以上のFishは必要ありません。
+		5次以上のFishが成立するときには、相補的位置に4次以下のFish（双対Fish）が成立します。
+		双対Fishは以下で実際に示します。<br><br>
+		また、	3次以上のFishでは、図に示すように一部が欠けているパターンでもFishが成立します。
+		この欠けている部分は、確定済みのセルか、単にそのセルの候補に着目数字がない場合があります。</p>
+		<img src="images/img34/img34c.png" width="697" height="217">
+		
+		<p>Fish系アルゴリズムには、数種の方法の拡張が知られています（以下で扱います）。その準備として<strong>”BaseSet”、”CoverSet”</strong>を定義します。</p>
+		
+		<h4 id="BaseCoverSet"><strong>〇BseSet/CoverSet(重なりなし）</strong></h4>
+		
+		<p>Fish系の解法では、２組のhouseを用います。数字Xに着目し、数字Xを最大N個(Nは次数）含むhouseをN個選び、これを<strong>BaseSet</strong>と呼びます。
+		<strong>BaseSet</strong>のHouseは重なりがないとします。
+		また、<strong>BaseSet</strong>を完全に含むように、もう１組のN個のHouseを選びます。これを<strong>CoverSet</strong>と呼びます。
+		<strong>CoverSet</strong>についてもHouseは重なりがないとします。
+		このように選んだ、<strong>BaseSet、CoverSet</strong>の共通部分はLocked(限定状態）にあります。
+		<strong>BaseSet</strong>のHouseでは、どこかは決まらないが、必ず１セルは数字Xです。		 
+		<strong>CoverSet</strong>についても同じです。左図SwordFish(３次Fish）でLocked(限定状態）を確認してください。
+		(<strong>BaseSet</strong>の定義にのみ&quot;最大&quot;がつくことに注意してください） 
+		<strong>CoverSet</strong>は<strong>BaseSet</strong>を完全に含みますが、その他に<strong>BaseSet</strong>以外のセルを含んでもかまいません。
+		解法としては、その他のセルZを含むことに意味があります。セルZに数字Xが入ることは、<strong>BaseSet</strong>のLockedを壊します。
+		つまりセルZの候補数字から数字Xは除外できます。</p>
+				
+		<p>まとめると、次のようになります。<br>	<strong>【Ｎ次Fish】<br>
+		着目数字Xについて、N個以下のXを含むhouseをN個選んだとき（BaseSet）、これとは別のN個のHouse(CoverSet)がBaseSetを完全に含むなら、
+		BaseSetはLockedである。Lockedを壊す位置にある候補数字Xは除外できる。
+		なお、BaseSetとCoverSetをそれぞれ構成するHouseには重なりはないとする。</strong></p>
+
+		<p>BaseSet、CoverSetの概念を十分に理解しておく必要があります。これが分かると、以下の解析プログラムは読み解けるでしょう。
+		BaseSetはhouse内の位置は確定しないがそのどこかに着目数字が存在する状態であり、
+		例えば先の図の3次Fishの場合では、それぞれの縦の列のどこか１ヶ所づつに着目数字があるLockedです。
+		もしも、横行の丸印以外の位置に着目数字があると(▲印）、その行の丸印のどこにも着目数字が入らず、
+		Lockedが壊れてBaseSet全体に着目数字を入れることができなくなります。</p>
+
+		<p>次の図は、SwordFish(3D-Fish)と　JellyFish(4D-Fish)の例です。これらは同じ問題の同じ場面の双対Fishです。除外されるセル・候補数字は同じです。</p>
+		<img src="images/img34/img34d.png" height="270" width="270">
+		<img src="images/img34/img34e.png" height="270" width="270">
+		<p><small>左：SwordFish #7 BaseSet:C139 CoverSet:R169&nbsp; 右：JellyFIsh #7 BaseSet:R2345 CoverSet:C2567<br>
+		...6.8...6...9...529.....483.1...4.64..3.1..2...8.6....1.4.2.7..6.7.9.5.....8....</small></p>
+		<br>
+	
+		<h4>○Fishの解析プログラム</h4>
+		<p>BaseSetとCoverSetを理解すれば、さほど難しいプログラムコードではないでしょう。<br>
+		汎用Fishサブプログラム(ExtFishSub)を用いて解きますが、これは 基本Fish、Finnned Fish、(Finned)Franken/Mutant Fish
+		を解くことができます。<br>
+		ExtFishSubでは、FishMan(Fishを管理するクラス)でBaseSetとCoverSetを生成し、Fishの条件を調べます。
+		</p>
+
+	<pre class="prettyprint linenums lang-C"><small>public partial class FishGen: AnalyzerBaseV2{
+    public FishGen( GNPX_AnalyzerMan AnMan ): base(AnMan){ }
+
+    //Fish
+    public bool XWing(){     return Fish_Basic(2); }
+    public bool SwordFish(){ return Fish_Basic(3); }
+    public bool JellyFish(){ return Fish_Basic(4); }
+    public bool Squirmbag(){ return Fish_Basic(5); }
+    public bool Whale(){     return Fish_Basic(6); }
+    public bool Leviathan(){ return Fish_Basic(7); }
+
+    public bool Fish_Basic( int sz, bool fin=false ){
+        int rowSel=0x1FF, colSel=(0x1FF&lt;&lt;9);
+        for( int no=0; no&lt;9; no++ ){
+            if( ExtFishSub(sz,no,18,rowSel,colSel,FinnedF:fin) ) return true;
+            if( ExtFishSub(sz,no,18,colSel,rowSel,FinnedF:fin) ) return true;
+        }
+        return false;
+    }
+
+    public bool ExtFishSub( int sz, int no, int FMSize, int BaseSel, int CoverSel, bool FinnedF ){       
+        int noB=(1&lt;&lt;no);
+        var FMan=new FishMan(this,FMSize,no,sz);
+        foreach( var Bas in FMan.IEGet_BaseSet(BaseSel) ){            //BaseSet生成
+        //    if( AnMan.CheckTimeOut() ) return false;
+
+            foreach( var Cov in FMan.IEGet_CoverSet(Bas,CoverSel,FinnedF) ){  //CoverSet生成  
+                Bit81 FinB81 = Cov.FinB81;
+
+                Bit81 ELM =null;
+                if( FinB81.IsZero() ){  //===== Finなし =====
+                    if( !FinnedF && (ELM=Cov.CoverB81-Bas.BaseB81).Count&gt;0 ){                      
+                        foreach( var P in ELM.IEGetUCeNoB(pBDL,noB) ){ P.CancelB=noB; SolCode=2; }
+                        if(SolCode&gt;0){
+                            if( SolInfoDsp ){
+                                _Fish_FishResult(no,sz,Bas,Cov,(FMSize==27)); //FMSize 18:regular 27:Franken/Mutant
+                            }
+                            if( !AnMan.SnapSaveGP(true) ) return true; 
+                        }
+                    }
+                }
+                else if( FinnedF ){     //===== Finあり =====
+                    Bit81 Ecand=Cov.CoverB81-Bas.BaseB81;
+                    ELM=new Bit81();
+                    foreach( var P in Ecand.IEGetUCeNoB(pBDL,noB) ){
+                        if( (FinB81-ConnectedCells[P.rc]).Count==0 ) ELM.BPSet(P.rc);
+                    }
+                    if(ELM.Count&gt;0){                           
+                        foreach( var P in ELM.IEGet_rc().Select(p=&gt;pBDL[p]) ){ P.CancelB=noB; SolCode=2; }   
+                        if(SolCode&gt;0){
+                            if( SolInfoDsp ){
+                                _Fish_FishResult(no,sz,Bas,Cov,(FMSize==27)); //FMSize 18:regular 27:Franken/Mutant
+                            }
+                            if( !AnMan.SnapSaveGP(true) ) return true;
+                        }
+
+                    }
+                }
+                continue;
+            }
+        }
+        return false;
+    }
+
+    private void _Fish_FishResult( int no, int sz, UFish Bas, UFish Cov, bool FraMut ){
+        int   HB=Bas.HouseB, HC=Cov.HouseC;
+        Bit81 PB=Bas.BaseB81, PFin=Cov.FinB81; 
+        Bit81 EndoFin=Bas.EndoFin, CnaaFin=Cov.CannFin;
+        string[] FishNames={ &quot;Xwing&quot;,&quot;SwordFish&quot;,&quot;JellyFish&quot;,&quot;Squirmbag&quot;,&quot;Whale&quot;, &quot;Leviathan&quot; };
+
+        PFin-=EndoFin;
+        try{
+            int noB=(1&lt;&lt;no);                 
+            foreach( var P in PB.IEGet_rc().Select(p=&gt;pBDL[p]) )   P.SetNoBBgColor(noB,AttCr,SolBkCr);
+            foreach( var P in PFin.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,SolBkCr2);
+            foreach( var P in EndoFin.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,SolBkCr3);
+            foreach( var P in CnaaFin.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,SolBkCr3);
+
+            string msg = &quot;\r     Digit: &quot; + (no+1);                 
+            msg += &quot;\r   BaseSet: &quot; + HB.HouseToString();
+            msg += &quot;\r  CoverSet: &quot; + HC.HouseToString();;
+            string msg2=&quot; #&quot;+(no+1)+&quot; &quot;+HB.HouseToString().Replace(&quot; &quot;,&quot;&quot;)+&quot;/&quot;+HC.HouseToString().Replace(&quot; &quot;,&quot;&quot;);
+
+            string FinmsgH=&quot;&quot;, FinmsgT=&quot;&quot;;
+            if( PFin.Count&gt;0 ){
+                FinmsgH = &quot;Finned &quot;;
+                string st=&quot;&quot;;
+                foreach( var rc in PFin.IEGet_rc() ) st += &quot; &quot;+rc.ToRCString();
+                msg += &quot;\r    FinSet: &quot;+st.ToString_SameHouseComp();
+            
+            }
+                
+            if( !EndoFin.IsZero() ){
+                FinmsgT = &quot; with Endo Fin&quot;;
+                string st=&quot;&quot;;
+                foreach( var rc in EndoFin.IEGet_rc() ) st += &quot; &quot;+rc.ToRCString();
+                msg += &quot;\r  Endo Fin: &quot;+st.ToString_SameHouseComp();
+            }
+
+            if( !CnaaFin.IsZero() ){
+                FinmsgH = &quot;Cannibalistic &quot;;
+                if( PFin.Count&gt;0 ) FinmsgH = &quot;Finned Cannibalistic &quot;;
+                string st=&quot;&quot;;
+                foreach( var rc in CnaaFin.IEGet_rc() ) st += &quot; &quot;+rc.ToRCString();
+                msg += &quot;\r  Cannibalistic: &quot;+st.ToString_SameHouseComp();
+            }
+
+            string Fsh = FishNames[sz-2];
+            if( FraMut) Fsh = &quot;Franken/Mutant &quot;+Fsh;
+            Fsh = FinmsgH+Fsh+FinmsgT;
+            ResultLong = Fsh+msg;  
+            Result=Fsh.Replace(&quot;Franken/Mutant&quot;,&quot;F/M&quot;)+msg2;
+        }
+        catch( Exception ex ){
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.StackTrace);
+        }
+    }
+}</small></pre>
+	</article>
+	<br><br>
+</section>
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 ALS Chain</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h2>●ALS Chain</h2>		   
+	<p>ALS Chainは、<a href="page26.html">ALSをRCC</a>でループ状につなぐ解析アルゴリズムです。<br>
+	ALS Chainのイメージ図に示すように、ALSがRCCのリンクで繋がった連を形成し、この連が次の性質をもつとき、Lockedが生じます。
+	<ul>
+		<li>最初と最後のALSが、RCCとは異なる数字ｚを候補に持つ。<br></li>
+		<li>ALSの外部に、最初と最後のALS内の全てのｚをカバーするセルがある。<br></li>
+	</ul>
+	最初と最後のALS内の数字ｚを全てカバーするセルから、数字ｚ除外できます。
+	&quot;このセルは数字ｚ&quot;が真とすると、ALS-RCC-ALSの繋がりで、ALSは順にLockedSetとなりますが、
+	最後のALSでは候補数字が足りなくなります。<br><br></p>
+	
+
+	<p style="text-align:center">
+		<img src="images/img52/img52a.png">
+	</p>
+	
+	<p>ALS Chainの例です。</p>
+	
+	<img class="imgL" src="images/img52/img52b.png" style="width: 712px; height: 453px" >
+	<p class="newLine"><br>
+	7....5..9.9.4.7.8...8.3.7..81.3.9.6...6...9...3.7.2.18..3.7.1...4.5.1.2.1..6....4<br>
+    6..9....5.4.5.6.7...5.3.2...6.8.3.91..8...6..91.7.2.5...6.7.4...7.3.5.6.2....4..7<br><br></p>
+	
+	
+		<h4>○ALS Chain解析プログラム</h4>
+		<p>ALS Chainの 解析プログラムは、バックトラックを用います。
+		これは、チェイン系アルゴリズムに共通の形であり、最初に探索ルーティンの基本的な構造を示します。</p>
+
+		<h4>(1)Chain系探索ルーティンの基本的な構造</h4>
+		<p>
+		<ul>
+			<li>メイン関数では、起点ノードと最初のチェインを設定し、SearchChainを呼んで探索に入ります。探索で解が求まると、真で戻ります。<br><br></li>
+			
+			<li>探索ルーティンSearchChainでは、親ノードからの呼び出しに対し、現状態に次ノードを１つ付加してチェインを伸ばします。</li>
+			<li>次にこのチェインが解であるかを調べます。解であれば関数のリターン値を真として戻ります。<br></li>
+			<li>この戻りは再帰呼び出しの全てを真値で戻り、メインに達します。<br><br></li>
+			
+			<li>チェインが解でない場合には、残り深さを１つ減らし、深さ限界に達していなければ再帰的に自身(SearchChai)を呼びます。<br><br></li>
+			
+			<li>深さ限界に達した場合はリターン値を偽として戻ります。また、現状態からの次ノードを全て調べた場合にもリターン値を偽として戻ります。<br></li>
+		</ul>			
+			探索ルーティンを再帰的に定義する利点は、探索ルーティンはそれぞれの状態のみを管理すればよく、チェイン全体を管理する必要がないことが挙げられます。
+			また、探索の深さも、メイン関数の最大探索深さの設定で制御できます。<br>
+			深さ制御は単純に探索段階数を制御するのではない方法もあります。
+			ALS Chainでは、ALSのサイズを深さ制御に用い(段階ごとに次ALSのサイズ数減ずる)、ALSサイズの合計が小さい解が最初に求まるようにしています。<br>
+			なお、探索アルゴリズムは単純ですが、探索自体は膨大で時間がかかります。
+			探索アルゴリズムには代替性のあるものがかなりあり、単純な方法を先に適用することが重要です。
+
+		</p>
+		<pre class="prettyprint linenums lang-C"><small>//探索ルーティンの基本的構造
+メイン関数{
+    起点設定
+    チェイン=起点
+    if( SearchChain( 起点, 起点,最大探索深さ, チェイン) ) 解が求まった
+}
+
+bool SearchChain( 起点, 前ノード, 残り深さ, チェイン ){
+    foreach( 次ノード in 前ノードの次ノードリスト ){
+        チェインに次ノードを連結
+        if( チェインは解か ) return true;
+        if( (--残り深さ)>0 ){
+            if( SearchChain(起点 次ノード,残り深さ,チェイン) ) return true;
+        }
+        else return false;//深さ限界に達したので中断
+    }
+　  return false;
+}</small></pre><br>
+
+		<h4>(2)ALS Chainの解析プログラム</h4>
+		<p>ALS Chainの 解析プログラムです。プログラムは、ALS Chainのメイン、チェイン探索、解検証の３つの部分からできています。<br>
+		ALS Chainのメインでは、最初にALS生成、ALS-RCC-ALSリンク生成を行います。<br>
+		チェインの探索は、チェイン深さの設定、最初のALSの設定、リンクの設定を行い、実際の探索に入ります。
+		&quot;基本的な構造&quot;では、セルに相当するノードで説明しましたが、ALS Chainでは情報を多く持たせられるリンクを用いています。
+		バックトラックの制御方法は同じです。<br>
+		履歴管理用にはスタック(SolStack)を用います。
+		なお、ALSの重なりチェック用のビット表現変数(rcUsed)はリンクに持つことで、バックトラックの復帰時の状態復元が自動的に処理されます。
+</p>
+		<pre class="prettyprint linenums lang-C"><small>public partial class ALSTechGen: AnalyzerBaseV2{
+    public bool ALS_Chain(){
+        ALSMan.ALS_Search(1);
+        if( ALSMan.ALSLst==null || ALSMan.ALSLst.Count&lt;=3 ) return false;
+        ALSMan.Create_ALS2ALS_Link(true); //F:singly T:doubly
+        
+        for( int szCtrl=3; szCtrl&lt;=12; szCtrl++ ){   //サイズの小さいALS-Chainから探す
+            if( AnMan.CheckTimeOut() ) return false;
+            var SolStack=new Stack&lt;UALSPair&gt;();
+            foreach( var ALSHead in ALSMan.ALSLst.Where(p=&gt;p.ConnLst!=null && !p.LimitF) ){
+                if( !ALSHead.singly )  continue;
+                bool limitF=false;
+                foreach( var LK0 in ALSHead.ConnLst ){
+                    SolStack.Push(LK0);
+                    LK0.rcUsed = LK0.ALSpre.B81 | LK0.ALSnxt.B81;
+                    int szCtrlX = szCtrl-LK0.ALSpre.Size-LK0.ALSnxt.Size;
+                    _Search_ALSChain(LK0,LK0,SolStack, szCtrlX,ref limitF);  //再帰サーチ
+                    if(SolCode&gt;0) return true;
+                    SolStack.Pop();
+                }
+                if( !limitF ) ALSHead.LimitF=true;//サイズ制限内のときは、次サイズで探索しない
+            }
+        }
+        return false;
+    }
+
+    private bool _Search_ALSChain( UALSPair LK0, UALSPair LKpre, Stack&lt;UALSPair&gt; SolStack, int szCtrl, ref bool limitF ){
+        int nRccPre=LKpre.nRCC;
+        foreach( var LKnxt in LKpre.ALSnxt.ConnLst.Where(p=&gt;(p.nRCC!=nRccPre)) ){           
+            UALS UAnxt=LKnxt.ALSnxt;
+            if( !UAnxt.singly )  continue;
+            int szCtrlX = szCtrl-UAnxt.Size;
+            if (szCtrlX&lt;0) { limitF=true; return false; }
+            if( !(LKpre.rcUsed&UAnxt.B81).IsZero() ) continue;
+            SolStack.Push(LKnxt);
+            Bit81 rcUsedNxt = LKpre.rcUsed|UAnxt.B81;
+            if( _CheckSolution_ALSChain(LK0,LKnxt,rcUsedNxt,SolStack) ) return true;
+            
+            LKnxt.rcUsed = rcUsedNxt;
+            if( _Search_ALSChain(LK0,LKnxt,SolStack,szCtrlX,ref limitF) ) return true;
+            SolStack.Pop();
+        }
+        return false;
+    }
+
+    private bool _CheckSolution_ALSChain( UALSPair LK0, UALSPair LKn, Bit81 rcUsed, Stack&lt;UALSPair&gt; SolStack ){   
+        int ElmBH = LK0.ALSpre.FreeB.BitReset(LK0.nRCC);
+        int ElmBT = LKn.ALSnxt.FreeB.BitReset(LKn.nRCC);
+        int ElmB =ElmBH&ElmBT;
+        if( ElmB==0 ) return false;
+
+        bool solF=false;
+        foreach( int Eno in ElmB.IEGet_BtoNo() ){
+            int EnoB=(1&lt;&lt;Eno);
+            Bit81 Ez=new Bit81();
+            foreach( var P in LK0.ALSpre.UCellLst.Where(p=&gt;(p.FreeB&EnoB)&gt;0)) Ez.BPSet(P.rc);
+            foreach( var P in LKn.ALSnxt.UCellLst.Where(p=&gt;(p.FreeB&EnoB)&gt;0)) Ez.BPSet(P.rc);
+
+            Bit81 TBD=(new Bit81(pBDL,EnoB))-rcUsed;
+            foreach (var rc in TBD.IEGet_rc() ){
+                if( (Ez-ConnectedCells[rc]).IsZero() ){ pBDL[rc].CancelB|=EnoB; SolCode=2; }
+            }
+        }
+
+        if(SolCode&gt;0){
+            _SolResult_ALSChain(SolStack);
+            if( !AnMan.SnapSaveGP(true) )  return true;   //◆SnapSave◆
+        }
+        return false;
+    }
+    private void _SolResult_ALSChain( Stack&lt;UALSPair&gt; SolStack ){
+        string st=&quot;ALS Chain&quot;;            
+        if( SolInfoDsp ){
+            int nc=0, noB;
+            Color cr;
+            var SSrev = SolStack.ToList();
+            SSrev.Reverse();
+
+            foreach( var LKA in SSrev ){
+                noB=(1&lt;&lt;LKA.nRCC);
+                UALS UA=LKA.ALSpre;
+                cr=_ColorsLst[nc++];                 
+                foreach( var P in UA.UCellLst ) P.SetNoBBgColor(noB,AttCr,cr);               
+                st += &quot;\r ALS &quot;+nc+&quot;: &quot;+UA.ToStringRCN()+&quot; -&gt; #&quot;+(LKA.nRCC+1);
+            }
+            var LKB=SSrev.Last();
+            noB=(1&lt;&lt;LKB.nRCC);
+            cr=_ColorsLst[nc];
+            foreach( var P in LKB.ALSnxt.UCellLst ) P.SetNoBBgColor(noB,AttCr,cr);
+            st += &quot;\r ALS &quot;+(nc+1)+&quot;: &quot;+LKB.ALSnxt.ToStringRCN();
+            ResultLong = st;
+        }
+        Result = &quot;ALS Chain&quot;;
+    }
+}</small></pre>
+
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

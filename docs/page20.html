@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# プログラム</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	
+	<style type="text/css">
+		.auto-style1 {
+			font-family: "ＭＳ ゴシック";
+			font-size: 6pt;
+		}
+		.auto-style2 {
+			text-decoration: underline;
+		}
+	</style>
+</head>
+
+
+
+<body id="page" onload="prettyPrint()">
+	<a id="pageTop"></a> 
+    <header>
+       	<img src="images/imgTop/ImageTop3.jpg" >
+    </header>
+	  
+    <script type="text/javascript"> writeNaviHeader(); </script>
+ 
+<!-- ========================================================================== -->        
+	<section id="menuList">
+		<aside>
+			<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+		</aside>
+	</section>
+
+<!-- -------------------------------------------------------------------------- -->
+    <section id="main">      
+    	<article><br>	
+    		<a id="programingStyle"></a> 
+            <h4>●プログラミングスタイル</h4>
+            
+            <h4 class="auto-style2">○名前付け</h4>
+			<p>
+			GNPXでのクラス名、変数名、関数名等の名前付けの原則を示します。これは完全に統一されているわけではありません。
+			"NST"<span class="auto-style1">(NST:なにせ、趣味で作っているものですから)</span></p>        
+            <ol>
+				<li>クラス名の先頭に”U”がつくものは、基本的な要素を表すクラスです。“U”はUnitの省略です。</li><br>
+				<li>変数名の末尾に”B”がつくものは、ビット表現を扱う変数です。</li><br>
+				<li>変数名の末尾に”ｓ”がつくものは、要素を表すクラスオブジェクトの集合です。配列とList型の変数です。
+				   List型では”Lst”の場合もあります。</li><br>
+				<li>変数名の先頭に”p”がつくものは、他の場所（他のクラス)に実体があり、それを参照する仮身(エイリアス)変数です。</li><br>
+				<li>クラス名の末尾に”Man”がつくものは、要素クラスの集合を管理するクラスです。“Man”はManagerの省略です。</li><br>
+				<li>ローカル変数には、k,m,n（主にfor文）,P,Q,p,q（主にコレクションのforeach,while,select,…）等を用います。
+				   なお、繰返し変数の”i”は好みでないので使いません(判別しにくい）。</li><br>
+				<li>関数名の先頭にIEがつくものは、列挙子です。</li><br>
+				<li>プログラム全体で、同じ内容の変数には、同じ変数名を用いるように(極力"NST")努めています。</li><br>
+			</ol>
+
+			<h4 class="auto-style2">○コーディングスタイル</h4>
+			<p>
+			プログラムは行数がなるべく少ない方が良いと思うので、無駄な改行は省きます。
+			要素間のスペースは、無条件に入れるのではなく、意味のあるように入れたり・省いたりします。
+			これらにより、理解しやすいプログラムとなり、コード自体がアルゴリズムの解説になるように仕上げたつもりです。</p>
+            <ol>
+				<li>段落開始の”{“は、行先頭ではなく、前行の最後に配置。<br>
+   					ブロックの段下げを行うので、改行して”{“を行先頭に配置するのは、無駄な表現です。
+   					</li>
+   					<br>
+				<li>要素間のスペースは、意味のあるように配置<br>
+				   例に示すように、ひとつひとつの処理単位を示すために、スペースを入れたり・省いたりします。<br>
+				   ×印のスタイルは、コンピュータの処理能力が小さく、変数やキィワード等の要素への分解処理を軽くする必要があった
+				   大昔のコーディング方法の残骸だと思います。○印のように、ミクロレベルからプログラムの意図を表現し、理解するレベルを一段階上げるのがよいと思います。
+				<pre class="LG">   
+ ×：for (int k = r + 1; k &lt; P; k++){…}
+ ○：for( int k=r+1; k&lt;P; k++ ) {…}
+
+ ×：if (S &lt;= 0 || S&gt;>P){…}
+ ○：if( S&lt;=0 || S&gt;P ){…}
+ </pre>
+
+				</li>
+				<li>短いブロックは、複数文を1行にまとめる。<br>
+				つぎのswitch文の例では、複数文を1行にまとめ、スペースを省いて処理単位を明確にし、変数名を揃えて
+				ケース間の違いを分かりやすくしたコーディングです。	 
+				<pre class="LG">  
+×:switch (tp) {
+      case 0:
+          r = fx;
+          c = n;
+          break;
+      case 1:
+          r = n;
+          c = fx;
+          break;
+      case 2:
+          r = (fx / 3) * 3 + n / 3;
+          c = (fx % 3) * 3 + n % 3;
+          break;
+  }
+
+○switch(tp){
+      case 0: r=fx; c=n;　break;
+      case 1: r=x;  c=fx; break;
+      case 2: r=(fx/3)*3+n/3; c=(fx%3)*3+n%3; break;
+  }    
+</pre>
+				</li>
+	</ol>
+			
+			<h4 class="auto-style2">○関数を多く用いるプログラミング</h4>
+			<p>
+			GNPXでは、利用できる関数は積極的に使います。</p>
+			
+			
+            <ol>
+				<li>繰返しのfor文は可能であれば排除<br>
+   					for文よりもforeach文、Select文、while文、Linqの関数を積極的に使います。
+   					</li><br>
+
+				<li>集計の繰返し部分は、Aggregate関数で置き換え<br>
+				   プログラム文字数は多少長くなることがあります。
+				   </li><br>
+
+				<li>関数の長さは、50～100ステップ程度に<br>
+					できる限り印刷時に１ページに収まる長さとなるようにします。それ以上となる場合には、機能の分割、下請け関数への委譲を検討します。 <br>
+					これは、コーディングスタイルで述べたこととも関連します。面倒な処理はまとめて解決済みのこととし、１段階レベルを上げて考えるようにします。
+					GNPXのほとんどの解析アルゴリズムは50〜100ステップに収めます。たとえば、準備と結果報告を除いた解析の主要部分は、<br>
+					”Franken/MutantFish”は30ステップ、”DeathBlossom”は45ステップです。
+					この程度にすると、アルゴリズムの理解とその実装が容易になり、バグも発生しにくくなります。100ステップを超えるものは、”改良途上”と思ってください。
+					また、ユーザへの結果報告の部分を分かりやすく組み立てるために泥臭いコードもあり、これらが100ステップを超えることもあります。</li><br>
+			</ol>
+
+        </article> 
+    </section>
+
+    <footer>
+        <p id="copyright"> Copyright &copy; 2014-  GNPX. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

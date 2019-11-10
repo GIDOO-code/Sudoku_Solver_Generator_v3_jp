@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# セルクラス(UCell)</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	
+	<a id="pageTop"></a>
+    <header>
+       	<img src="images/imgTop/ImageTop3.jpg" >
+    </header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<a id="UCell"></a>
+		<h4>●セルクラス(UCell) </h4>
+		<p>数独の個々のセルは、次のクラスで表します。 <br>
+		ここに示すのは基本的な要素のみです。解析プログラムに用いるバージョン（<a href="page21a.html#UCell_all">（全コード</a>）は、作業変数とGUI表示色設定用の変数および関数を追加したものを用います。<ul>
+			<li>rcは、セルの位置（内部表現）で値は0～80です。 
+			自身の位置情報を持つのは、解析アルゴリズムでセルのコレクションを扱うときにセル自身の位置情報を使うためです。
+			名前は"ID"でも良いのですが、行(Row) 列(Column)を連想しやすいように"rc"としました。<br></li>
+			<li>r,c,bはセル位置の行,列,ブロックの内部表現値で、値は0～8です。 
+			この値はセルを生成した時点で決定するので、コンストラクターで設定し、readonly属性を持ちます。<br></li>
+			<li>Noは数独の問題または解読した数字です。問題として設定された数字は1～9、
+			問題を解いて決定した数字は-1～-9で、まだ解けていないセルは0の値です。<br></li>
+			<li>FreeBは、問題を解く過程でそのセルに可能性のある候補数字をビット表現した値です。 
+			たとえばあるセルには1,4,6が候補としてある状態のとき、 <br>1&lt;&lt;(1-1) | 1&lt;&lt;(4-1) |1&lt;(6-1) = 1+8+32 = 41 が値です。<br></li>
+			<li>FreeBCはそのセルに可能性のある候補数字の数を表します。これは常に設定するのではなく必要となったときに算出するプロパティです。<br></li>
+			<li>FixedNoは、解析プログラムがそのセルの数として決定した値が入ります。
+			CancelBは、解析プログラムがそのセル入ることはないと解析した数字をビット表現したものです。 
+			FixedNoとCancelBを用意し、解析処理と次のステップへの更新処理を分離したのは、 単に解くプログラムを作るのではなく、
+			その過程を解説するために解析結果を表示しどこのセルの数字が決定したか、あるいは、どの数字が入らないことか決定したのかを示すためです。<br></li>
+		</ul>
+
+		<pre class="prettyprint linenums lang-C title：'簡略版'"><small>public class UCell{
+    public readonly int  rc;
+    public readonly int  r;
+    public readonly int  c;
+    public readonly int  b;
+
+    public int  No;         //&gt;0:問題  =0:空き  &lt;0:解答
+    public int  FreeB; 
+    public int  FreeBC{ get{ return FreeB.BitCount(); } }
+
+    public int  FixedNo;
+    public int  CancelB;
+      
+    public UCell( int rc, int No=0 ){
+        this.rc = rc;
+        this.r  = rc/9;
+        this.c  = rc%9;
+        this.b  = rc/27*3+(rc%9)/3;
+        this.No = No;
+        this.FreeB = 0x1FF;
+    }
+}</small></pre>
+	</article>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

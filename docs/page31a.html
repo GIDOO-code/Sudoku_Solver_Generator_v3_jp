@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 Last Digit</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●Last Digit</h4>
+		<img class="imgL" src="images/img31_2/img31aa.gif" style="width: 270; height: 270">
+		<p>「Last Digit」は、数独の数字配置のルールそのものです。<br>
+		0～26のハウスについて、「未確定のセルが１つのハウスでは、そのセルは残りの数字に確定」します。<br><br>
+		左の例では　X=4 Y=6 Z=8　に確定します。</p>
+	
+		<p class="newLine"><br>○問題例</p>
+		
+		<img class="imgL" src="images/img31_2/img31a.png" style="width: 338; height: 338">
+		
+		<p>背景が濃いセルは問題数字、 淡いセルは解読したセル、<br>
+  		   小さい数字は候補数字<br><br>
+  		   R3C3のセルは数字6と確定した。</p>
+  		<p class="newLine">.93...7..5.4.7..1.27.3..5.8..2..78...4..5.6.....4...914.853.9...3...4.85..5..9.3.</p>
+  		<p>素朴にプログラムを作れば、次のコードになるでしょう。<br>
+  		[09]GetCell_Houseでハウス(行・列・ブロック)内のnx番目のセルを取得し、ハウス内の未確定セルが１セルのとき解読成功となります。<br>
+  		[16]SolCodeは解析繰返しの始めに”-1”に設定し、セルの数字が確定したとき"1"とする制御変数です。
+  		値"2"は、候補数字から除外できる数字が見つかったことを表します。<br>
+  		[18] MltSolOnは、複数のセルが同時に確定する場合に”同時/"個別に確定”の制御変数です。<br>
+  		[25] SolInfoDspは”解読のみ行う/ユーザーへの情報提供を行う”の制御変数です。</p>
+  		<h4>Last Digit(素朴版)</h4>
+  		<pre class="prettyprint linenums lang-C "><small>partial class GNPZ_Analyzer{		
+    public bool gSDK_LastDigitOld( ){
+        int rc=0;
+        UCell P0=null;
+        
+        for( int tfx=0; tfx&lt;27; tfx++ ){
+            int cc=0;
+            for( int nx=0; nx&lt;9; nx++ ){
+                UCell P = GetCell_House( pBDL, tfx, nx, ref rc );
+                if( P.No==0 ){
+                    if( ++cc>=2 ) goto nextTry;
+                    P0 = P;
+                }
+            }
+            if( cc==1 ){
+                SolCode=1;
+                P0.FixedNo = P0.FreeB.BitToNum()+1;
+                if( !MltSolOn )  goto LFond;
+            }
+        nextTry:
+            continue;
+        }
+
+      LFond:
+        if( SolCode==0 )  return  false;
+        if( SolInfoDsp ) ResultLong = "Last Digit";
+        Result = "Last Digit";
+        return true;
+    }
+    private UCell GetCell_House( List&lt;UCell&gt; pBDL, int tfx, int nx, ref int rc ){ //nx=0...8
+        int r=0, c=0, fx=tfx%9;
+        switch(tfx/9){
+            case 0: r=fx; c=nx; break;//行
+            case 1: r=nx; c=fx; break;//列
+            case 2: r=(fx/3)*3+nx/3; c=(fx%3)*3+nx%3; break;//ブロック
+        }
+        return pBDL[r*9+c];
+    }
+}</small></pre> 		
+		<p>次はGNPXの目指す方針で作ったコードです。解析アルゴリズムの本質的部分は[05]の１行です。<br>
+　　if( pBDL.IEGetCellInHouse(tfx,0x1FF).Count()==1 ){<br>
+「盤面pBDLからtfx番目のHouseのセルを列挙し、その数（Count関数)が１の場合に…」と定義そのままを表すコードです。<br>
+IEGetCellInHouseの２番目の引数は列挙方法を修飾するもので、セルの持つ候補数字の条件を指定します。たとえば、pBDL.IEGetCellInHouse(tfx,(1&lt;&lt;2))とすれば、候補数字に3を含むセルのみが列挙されます。<br>
+0x1FFは、「いずれかの候補数字がある」すなわち「確定セルを除くすべてのセル」を意味します。<br>
+IEGetCellInHouseはList&lt;UCell&gt;型の拡張関数として、他の同様な関数とともに静的クラスで定義します。<br>
+素朴版のようなプログラミングは、高度なアルゴリズムになるとすぐに混乱し破綻します。早めにGNPX版に慣れてください。
+<br></p>
+  		<h4>○解析プログラム　Last Digit(GNPX版)</h4>
+  		<pre class="prettyprint linenums lang-C "><small>public class SimpleSingleGen: AnalyzerBaseV2{
+    public bool LastDigit( ){
+        bool  SolFond=false;
+        for( int tfx=0; tfx<27; tfx++ ){
+            if( pBDL.IEGetCellInHouse(tfx,0x1FF).Count()==1 ){
+                SolFond=true;
+                var P=pBDL.IEGetCellInHouse(tfx,0x1FF).First();
+                P.FixedNo=P.FreeB.BitToNum()+1;                 
+                if( !MltSolOn )  goto LFond;
+            }
+        }
+
+        LFond:
+        if(SolFond){
+            SolCode=1;
+            Result="Last Digit";
+            if( SolInfoDsp ) ResultLong="Last Digit";
+            AnMan.SnapSaveGP();
+            return true;
+        }
+        return false;
+    }
+}</small></pre>	
+	
+ 		<h4>IEGet関数</h4>
+  		<pre class="prettyprint linenums lang-C "><small>static public class StaticSA{ 
+    static public IEnumerable&lt;UCell&gt; IEGetCellInHouse( this List&lt;UCell&gt; pBDL, int tfx, int FreeB=0x1FF ){
+        int r=0, c=0, tp=tfx/9, fx=tfx%9;
+        for( int nx=0; nx&lt;9; nx++ ){
+            switch(tp){
+                case 0: r=fx; c=nx; break;//行
+                case 1: r=nx; c=fx; break;//列
+                case 2: r=(fx/3)*3+nx/3; c=(fx%3)*3+nx%3; break;//ブロック
+            }
+            UCell P=pBDL[r*9+c];
+            P.nx=nx;
+            if( (P.FreeB&FreeB)&gt;0 ) yield return P;
+        }
+    }
+}</small></pre>	
+
+	
+<!-- ======================================================================== -->				
+		
+	</article>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

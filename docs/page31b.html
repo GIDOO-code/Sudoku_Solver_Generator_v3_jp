@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 アルゴリズム Naked Single</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●Naked Single</h4>
+		<img class="imgL" src="images/img31_2/img31bb.gif" style="width: 270; height: 270">
+		<p>「Naked Single」は"候補数字数が１つのセルは確定"です。<br>これも数独の数字配置のルールそのものです。<br>
+		左の例では　X=4 に確定します。</p>
+		
+		
+		<p class="newLine"><br>○問題例</p>
+				
+		<img class="imgL" src="images/img31_2/img31b.png" style="width: 338; height: 338">
+		<p>セルの候補数字がただ１つなら、その数字に確定する</p>
+  		<p class="newLine">.3217.6.88.4..9.7.75.......6....84572.......6.7.4.....3..5...84.2.9..5..4..61.7.2</p>
+  		<p>Naked 
+		Singleの解析プログラムは定義そのままのコードです。Where文は、述語により値のシーケンスをフィルター処理します。
+		[04]は機能的には次の２行と同等ですが、「候補数字数が１のセルを選択」と「選択したセルの候補数字の数が１の場合」のように意味するところの違いがあります。
+		<br>
+		foreach( UCell P in pBDL ){<br>
+		&nbsp;&nbsp;&nbsp;&nbsp;if( P.FreeBC==1) ){</p>
+
+  		<h4>○解析プログラム　Naked　Single</h4>
+  		<pre class="prettyprint linenums lang-C "><small>public class SimpleSingleGen: AnalyzerBaseV2{
+    public bool NakedSingle( ){
+        bool  SolFond=false;
+        foreach( UCell P in pBDL.Where(p=&gt;p.FreeBC==1) ){
+            SolFond=true;
+            P.FixedNo=P.FreeB.BitToNum()+1;      
+            if(!MltSolOn)  goto LFond;
+        }
+
+        LFond:
+        if(SolFond){
+            SolCode=1;
+            Result=&quot;Naked Single&quot;;
+            if(SolInfoDsp) ResultLong=&quot;Naked Single&quot;;
+            AnMan.SnapSaveGP();   //■SimpleSingleGen は、SnapSaveGPの対象外
+            return true;
+        }
+        return false;
+    }
+}</small>｝</pre>	
+
+<!-- ======================================================================== -->				
+	</article>
+	<br><br><br>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

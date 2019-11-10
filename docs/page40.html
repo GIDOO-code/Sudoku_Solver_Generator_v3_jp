@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 Skyscraper</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●Skyscraper</h4>
+		<p>Skyscraperの説明には、<a href="page25.html">セル間リンク</a>と、<a href="page25.html#ConnectedCells">関係セルの参照</a>を用います。</p>
+
+		<p>Skyscraperは、LockedSet、Fishと同様にパターン型の解法で、２つの強いリンクで構成されます。
+		左図のように着目数字Xの２つの強いリンクがあり、４つある端セルのうち１組のみ同じHouseに属しているとします。
+		このとき残りの端セルと同時に関係するセル（右図の△セル）は、Lockedにより候補数字からXが除外されます。<br>
+
+		<p style="text-align:center">
+			<img src="images/img40/img40c.png" width="469" height="217">
+		</p>
+
+		<p>Skyscraperの解析アルゴリズムも、この図の手順とおりです。
+		<ol>
+			<li>着目数字Xの設定</li>
+			<li>2組のリンクの選択</li>
+			<li>リンクの条件チェック(リンク端点の1対のみ同じHouse)</li>
+			<li>除外候補セル探索</li>
+		</ol>
+		</p>
+		
+		<p>Skyscraperは比較的やさしい解析手法で、ヒトがプレイする場合でも見つけ易いでしょう。同じ場面にいくつものSkyscraperが見つかることもあります。
+		次のSkyscraperの上段・下段は、それぞれ同じ場面にある３つのSkyscraperです。</p>
+		<img src="images/img40/img40d.png" width="240" height="240">
+		<img src="images/img40/img40e.png" width="240" height="240">
+		<img src="images/img40/img40f.png" width="240" height="240">
+		<img src="images/img40/img40g.png" width="240" height="240">
+		<img src="images/img40/img40h.png" width="240" height="240">
+		<img src="images/img40/img40i.png" width="240" height="240">
+
+		<small>
+		<p class="newLine">.5.....9.3...2...5..2...68.....65....8.7..4.9...9.1.5...6.5..322.5..49...7..9.5.6(上段）<br>
+						   56...........23.4.9.....18.6....14...592.486...16....3.36.....9.7.36...........34(下段）</p>
+		</small>
+		<br>
+
+		<h4>○Skyscraperの解析プログラム</h4
+		<p>Skyscraperの解析プログラムの処理手順は、以下のとおりです。
+		<ol>
+			<li>着目数字Xの設定<br><br></li>
+			<li>2組のリンクの選択<br>
+			2組のリンクの選択は組合せで選んでいます。リンクは方向を持つように生成します。
+			それらのリンク群から2組選んだとき(リンクIDが降順に選ぶ）、それらの端点セルが全て異なることを確認します。
+			次に、起点側セル同士に着目して、同じhouseに属するかをチェックします（ここでは起点としましたが、終点でもかまいません）。
+			もしも、リンクを方向なしで生成し組合せで2組を選ぶと、リンクの両端の比較が複雑になります。ここで採用した方法の方が単純に処理できます。<br><br></li>
+
+			<li>残りのリンク端点セルのhouse比較<br>
+			先頭同士以外の端点に共通houseがないことを確認します。これは3組（先頭-終点、終点-先頭、終点-終点）を単純に比較します。<br><br></li>
+
+			<li>Lockedセルの探索<br>
+			２つの終点セルの影響圏の共通部分にあり、かつ２つの始点セルの影響圏にないセルについて、候補数字Xの有無をチェックします。
+			あれば、Skyscraperが成立します。<br><br></li>
+		</ol>
+
+	<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public CellLinkMan  CeLKMan;
+    public List&lt;UCell&gt;  BVCellLst; //BV:bivalue
+
+    public CellLinkGen( GNPX_AnalyzerMan pAnMan ): base(pAnMan){
+        CeLKMan=new CellLinkMan(pAnMan);
+        BVCellLst=null;
+    }
+
+    public override void Initialize(){ 
+        CeLKMan.Initialize();
+        BVCellLst=null;
+    }
+
+    public bool Skyscraper(){ //StrongLinkを使う方法
+        CeLKMan.PrepareCellLink(1);    //strongLink生成
+
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);               
+            var SSLst = CeLKMan.IEGetNoType(no,1).ToList(); 
+            if( SSLst.Count&lt;=2 ) continue;
+
+            var prm=new Permutation(SSLst.Count,2);
+            int nxtX=99;
+            while( prm.Successor(nxtX) ){                
+                UCellLink UCLa=SSLst[prm.Pnum[0]], UCLb=SSLst[prm.Pnum[1]];
+                nxtX=0;
+                if( UCLa.ID&lt;UCLb.ID ) continue; //2リンクはID降順
+                nxtX=1;
+                if( (UCLa.B81|UCLb.B81).Count!=4 )  continue;       
+                //全てセルは異なる
+
+                Bit81 ConA1=ConnectedCells[UCLa.rc1], ConA2=ConnectedCells[UCLa.rc2]; 
+                if( !ConA1.IsHit(UCLb.rc1) || ConA1.IsHit(UCLb.rc2) ) continue;
+                if(  ConA2.IsHit(UCLb.rc1) || ConA2.IsHit(UCLb.rc2) ) continue;
+                //(UCLa.rc1)(UCLb.rc1)のみ同じハウスに属している
+
+                Bit81 candHit = ConA2 & ConnectedCells[UCLb.rc2];
+                candHit = candHit - (ConA1 | ConnectedCells[UCLb.rc1]);
+
+                bool SSfond=false;
+                foreach( UCell P in candHit.IEGetUCeNoB(pBDL,noB) ){     
+                    P.CancelB = P.FreeB&noB;
+                    SSfond=true;
+                }
+
+                if(SSfond) {
+            #region 結果
+                    SolCode =2;
+                    pBDL[UCLa.rc1].SetNoBBgColor(noB,AttCr,SolBkCr);
+                    pBDL[UCLa.rc2].SetNoBBgColor(noB,AttCr,SolBkCr);
+                    pBDL[UCLb.rc1].SetNoBBgColor(noB,AttCr,SolBkCr);
+                    pBDL[UCLb.rc2].SetNoBBgColor(noB,AttCr,SolBkCr);                     
+
+                    string msg2=&quot;&quot;;
+                    if(SolInfoDsp){
+                        string msg = &quot;\r&quot;;
+                        msg += &quot;  on &quot; + (no+1) + &quot; in&quot;;
+                        msg += &quot; r&quot; + (UCLa.rc1/9+1) + &quot;c&quot; + (UCLa.rc1%9+1);
+                        msg += &quot; r&quot; + (UCLb.rc1/9+1) + &quot;c&quot; + (UCLb.rc1%9+1);
+                        msg += &quot;\r  connected by&quot;;
+                        msg += &quot; r&quot; + (UCLa.rc2/9+1) + &quot;c&quot; + (UCLa.rc2%9+1);
+                        msg += &quot; r&quot; + (UCLb.rc2/9+1) + &quot;c&quot; + (UCLb.rc2%9+1);
+                        msg += &quot;\r  eliminated &quot;;
+
+                        foreach( UCell P in candHit.IEGetUCeNoB(pBDL,noB) ){     
+                            msg2 += &quot; &quot;+P.rc.ToRCString();
+                        }
+
+                        msg2=msg2.ToString_SameHouseComp();
+                        ResultLong = &quot;Skyscraper&quot; + msg+msg2;
+                        Result = &quot;Skyscraper #&quot;+(no+1) +&quot; in &quot;+msg2;
+                    }
+                    else Result = &quot;Skyscraper #&quot;+(no+1);
+            #endregion 結果
+                    if( !AnMan.SnapSaveGP(true) )  return true;
+                }
+            }
+        }
+        return false;
+    }
+}</small></pre>
+
+
+	</article>
+	<br><br>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 Franken/Mutant Fish</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="Finned_FM_Fish"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●(Finned) Franken/Mutant Fish</h4>
+		<p>Fishは、行と列(または列と行）の２つのhouse群のLockedに基づくアルゴリズムです。Lockedにより除外できるセル・候補数字を、BaseSetとCoverSetという概念で解説しました。
+		ここでN次Fishの定義を再度示します。<br><br>
+		
+<strong>【Ｎ次Fish】<br>
+		数字Xに着目する。N個以下のXを含むhouseをN個選んだとき(BaseSet)、これとは別のN個のHouse(CoverSet)がBaseSetを完全に含むなら、BaseSetはLocked(限定状態)にある。
+		Lockedを壊す位置にある候補数字は除外できる。</strong><br><br>
+
+FishのBaseSet/CoverSetは行/列(または列/行)でしたが、BaseSetとCoverSetには&quot;行&quot;,&quot;列&quot;の条件はありません。
+&quot;行と列の組合せ&quot;でも条件を満たします。BaseSetとCoverSetは&quot;ブロック&quot;でも、あるいは&quot;行・列・ブロック&quot;が混在しても条件に合います。ただし、BaseSetを構成するHouse群に重なりはなく、CoverSetも同様に重なりがないとします(重なりのあるケースは、後に触れます）。これらの&quot;行・列・ブロック&quot;が混在するFishには名前がついています。
+BseSet/CoverBseにブロックが少なくとも１個加わったタイプは、<strong>Franken Fish</strong>と呼びます。また、&quot;行・列・ブロックが混在する&quot;タイプは、<strong>Mutant Fish</strong>の名前がついています。解析アルゴリズムには差がないので<strong>Franken/Mutant Fish</strong>と呼ぶことにします。<br><br>
+		Franken/Mutant FisｈにもFin付タイプがあります。<strong>&quot;BaseSetに含まれCoverSetに含まれないセル・候補数字をFin&quot;</strong>と定義します。
+CoverSetに含まれBaseSetに含まれないセル・候補数字があり、これが真のとき同時にFinを除外できれば、<strong>Finned Franken/Mutant Fish</strong>が成立します。</p>
+		<p>以上をまとめ、解析アルゴリズムを整理します。</p>
+		<ol>
+			<li>着目数字Xの設定<br><br></li>
+			<li>BaseSetの選択<br>
+			行・列・ブロックの27個のHouseからN個選択し、BaseSetとする。このとき、N個のHouseに重なりはないとする。BaseSetに含まれるセル群を<strong>B</strong>とします。<br><br></li>
+			<li>CoverSetの選択<br>
+			行・列・ブロックの27個のHouseからBaseSetとは異なるN個を選択し、CoverSetとする。このとき、N個のHouseに重なりはないとする。CoverSetに含まれるセル群を<strong>C</strong>とします。<br><br></li>
+
+			<li>CoverSetがBaseSetを完全に含むとき（Finなし）<br>
+			完全に含まれることは、集合で表すと　<strong>Fin=B-C=</strong>空集合 です。 <strong>E=C-B</strong>≠空集合のとき、Eの要素eから着目数字Xが除外できます。（差集合：A-B=A∩(notB)<br>
+			<br></li>
+
+			<li>Fin付きのとき<br>
+			Fin付きは集合で表すと　<strong>Fin=B-C</strong>≠空集合 です。 <strong>E=C-B≠</strong>空集合のとき、Eの要素セルeが<strong>Fin</strong>全体(Finが複数セルのときもある)を影響圏に含むなら、eから着目数字Xが除外できます。<br></li>		
+		</ol>
+
+		<p>(Finned) Franken/Mutant Fishの例 を示します。<br>
+		<small>左図　#8 BaseSet:r1 c38　CoverSet:r9 b13　 右図 #4 BaseSet:r48 c1 CoverSet:r6 
+		c4 b7 Fin:r4c9 r8c8</small></p>
+		<img class="imgL" src="images/img36/img36a.png">
+		<img class="imgL" src="images/img36/img36b.png">
+		<p class="newLine">..4672....5...34...1.5...2798..4..15.31...27.76..2..4354...9.3...92...6....4567..<br>
+						   .4...1.286..5....7..7.46...7.3..98..9.......2..12..3.9...95.1..1....2..559.1...7.</p>
+						   
+		<p>次は、高次数の Finned Franken/Mutant Fish の例です。なお、これらにはもっと簡単な解法があります。<br>
+		<small>左図　Finned Franken/Mutant Squirmbag #7 BaseSet:r345 c13 CoverSet: c8 B1457 FinSet:r3c7<br>
+		右図 Finned Mutant Leviathan #7 BaseSet:r4568 c1 b23 CoverSet:r7 c23569 b6 FinSet:r123c1 
+		r2c78</small></p>
+		<img class="imgL" src="images/img36/img36c.png">
+		<img class="imgL" src="images/img36/img36d.png">
+		<p class="newLine">.38.6...96....93..2..43...1..61..9355.3.8.1...4........8.65..13...8..5.63.59..827<br>
+						   ..9..154..5..9.....6.5..92.8..3..1.41..4.6..95.4..8..2.42..9.6.....6..1..187..2..</p>
+
+		<h4>○(Finned) Franken/Mutant Fisｈの解析プログラム</h4>
+		<p>(Finned) Franken/Mutant Fisｈの解析プログラムは、上記のアルゴリズムをそのままコードにすればできます。
+		しかし、BaseSet/CoverSetを用いる汎用Fishサブプログラム(ExtFishSub)があるので、これのパラメータ制御だけで(Finned) Franken/Mutant Fisｈは解けます。
+</p>
+
+	<pre class="prettyprint linenums lang-C"><small>public partial class FishGen: AnalyzerBaseV2{
+//Frankenn/MutantFish
+    private int rcbSel=0x7FFFFFF;
+    public bool FrankenMutantFish( ){       
+        for( int sz=2; sz&lt;=4; sz++ ){   //対称性からサイズ4まで
+            for( int no=0; no&lt;9; no++ ){
+                if( ExtFishSub(sz,no,27,rcbSel,rcbSel,false) ) return true;
+                if( AnMan.CheckTimeOut() ) return false;
+            }
+        }
+        return false;
+    }
+//FinnedFrankenn/MutantFish
+    public bool FinnedFrankenMutantFish( ){
+        for( int sz=2; sz&lt;=7; sz++ ){   //Finあり はサイズ7まで(5:Squirmbag 6:Whale 7:Leviathan)
+            for( int no=0; no&lt;9; no++ ){
+                if( ExtFishSub(sz,no,27,rcbSel,rcbSel,true) ) return true;
+                if( AnMan.CheckTimeOut() ) return false;
+            }
+        }
+        return false;
+    }
+}</small></pre>
+
+
+	</article>
+	<br><br>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

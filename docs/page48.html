@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 X-Chain</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h4>●X-Chain</h4>		   
+		<p>X-Chainは、１数字の強いリンクと弱いリンクの連結で生じるLockedを用いた解析アルゴリズムです。<br>
+		着目数字Xを設定し、着目セルからの強いリンクで開始して、強・弱のリンクを交互に連結して連を作ります。
+		弱いリンクの先のセルが着目セルと同じhouseに属するとき、このセルの候補数字からXを除外できます。
+		強いリンクは弱いリンクでもあるので、連は強・強・強となることもあります。</P>
+		<p style="text-align:center">
+			<img src="images/img48/img48aEng.png" >
+		</p>
+		<p>X-Chainの例です。</p>
+		
+		<img class="imgL" src="images/img48/img48b.png" style="width: 271px; height: 271px" >
+		<img class="imgL" src="images/img48/img48c.png" style="width: 271px; height: 271px" >
+		<small>
+		<p class="newLine">
+		..2..56.145..92....6.41.9.2..5.7....8.......7....2.3..1.3.46.2....95..735.92..8..<br>
+		...4..296.79..2..3.42..351.4.......2.....1.5..21.54..92.8...9..9.4.3...116.9.5.4.
+		</p></small>
+		
+		
+		<h4>○X-Chain解析プログラム</h4>
+		<p>解析プログラムは、リンク列の生成関数と　X-Chainの成立をチェックするプログラムからなります。リンク列の生成関数をきちんと作れば、あとは容易です。</p>
+		
+		<h4>(0)連生成関数</h4>
+		<p>連生成は波及的探索処理で組み立てています。
+		この解析アルゴリズム固有の処理ですが、4セル以上の連を対象とするために、起点セルに直接関連するセル（CRL[2]）を求めています。
+		
+		変則的な方法ですが、Bit81のID要素を使って着目したセルを呼び出し元に通知しています[14]。
+		</p>
+
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    private IEnumerable&lt;Bit81[]&gt; _GetXChain( int no, List&lt;int&gt; LKRec ){
+        Bit81 TBD = new Bit81(pBDL,(1&lt;&lt;no));
+
+        int rcS;
+        while( (rcS=TBD.FindFirstrc())&gt;=0 ){
+            TBD.BPReset(rcS);
+            Bit81[] CRL=new Bit81[3];
+            CRL[0]=new Bit81(); CRL[1]=new Bit81(rcS); CRL[2]=new Bit81();
+            CRL[0].ID=rcS;
+            Queue&lt;int&gt; rcQue=new Queue&lt;int&gt;();
+            rcQue.Enqueue( (rcS&lt;&lt;1)|1 );    //(最初は強リンク、while内で反転) 
+
+            LKRec.Clear();
+            bool firstLK=true;
+            while(rcQue.Count&gt;0){
+                int rcX = rcQue.Dequeue();
+                int swF = 1-(rcX&1); 
+                int rc1 = (rcX&gt;&gt;1);
+
+                foreach( var P in CeLKMan.IEGetRcNoType(rc1,no,(swF+1)) ){
+                    int rc2=P.rc2;
+                    if( (CRL[0]|CRL[1]).IsHit(rc2) ) continue;
+                    CRL[swF].BPSet(rc2);
+                    rcQue.Enqueue( (rc2&lt;&lt;1)|swF );
+                    LKRec.Add( rc1&lt;&lt;8|rc2 );
+                    if( firstLK ) CRL[2].BPSet(rc2); 
+                }
+                firstLK=false;
+            }
+            if( CRL[1].Count&gt;0 ) yield return CRL;
+        }
+        yield break;
+    }
+}</small></pre>
+
+		<h4>(1)X-Chain</h4>
+		<p>リンク列生成関数の結果を用いて、開始セルと弱リンク先端のセルが同じHouseに属することを調べます。
+		結果の表示用に始点・終点間のリンク列のみを抽出する　SelectLink_XChain　を用いています。
+		これは、解析アルゴリズムとしては必要ありません。
+		</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public bool XChain(){
+        CeLKMan.PrepareCellLink(1+2);    //strongLink(1),weakLink(2)生成
+
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);   
+
+            List&lt;int&gt; LKRec=new List&lt;int&gt;();
+            foreach( var CRL in _GetXChain(no,LKRec) ){
+                int rcS=CRL[0].ID;  //Bit81のIDを情報交換に用いる(変則的利用
+                
+                Bit81 ELM=(ConnectedCells[rcS]&CRL[1])-CRL[2]; //起点関連セル＆弱連結セル
+                if( ELM.IsZero() ) continue;
+
+                foreach( var P in ELM.IEGetUCeNoB(pBDL,noB) ) P.CancelB=noB;
+
+                //===== X-Chain fond =====
+                SolCode = 2;
+                string SolMsg=&quot;X-Chain #&quot;+(no+1);
+                Result=SolMsg;
+                if(SolInfoDsp){  
+                    Bit81 LKRecB=_SelectLink_XChain(LKRec,rcS,ELM,noB); //関連リンクのみを抽出                   
+                    CRL[0]&=LKRecB; CRL[1]&=LKRecB;
+
+                    Color Cr  = _ColorsLst[0];
+                    Color Cr1 = Color.FromArgb(255,Cr.R,Cr.G,Cr.B); 
+                    Color Cr2 = Color.FromArgb(120,Cr.R,Cr.G,Cr.B);    //(明度調整)
+                    foreach( var P in CRL[0].IEGetUCeNoB(pBDL,noB) ) P.SetNoBBgColor(noB,AttCr,Cr2);
+                    foreach( var P in CRL[1].IEGetUCeNoB(pBDL,noB) ) P.SetNoBBgColor(noB,AttCr,Cr1);
+                    pBDL[rcS].SetNoBBgColor(noB,AttCr,SolBkCr);
+                    ResultLong=SolMsg;;
+                }
+                if( !AnMan.SnapSaveGP(true) )  return true;
+            }
+        }
+        return false;
+    }
+    private Bit81 _SelectLink_XChain( List&lt;int&gt; LKRec, int rcS, Bit81 ELM, int noB ){
+        Bit81 LKRecB=new Bit81();
+        foreach( var P in ELM.IEGetUCeNoB(pBDL,noB) ){
+            int rcX=P.rc;
+            LKRecB.BPSet(rcX);
+
+            while(rcX!=rcS){
+                rcX=LKRec.Find(p=&gt;(p&0xFF)==rcX);
+                if( rcX==0 ) break;
+                rcX=(rcX&gt;&gt;8);
+                LKRecB.BPSet(rcX);
+            }
+        }
+        return LKRecB;
+    }
+ }</small></pre>
+
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

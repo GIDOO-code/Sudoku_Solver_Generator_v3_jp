@@ -1,0 +1,371 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# セル間リンク</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- ======================================================================== -->		
+<section id="main">
+	<article><br>
+		<h4>(1)セル間リンク</h4>
+		<p>セル間リンクには、強いリンクと弱いリンクの2種類があります。</p>
+		<ul>
+			<li><strong>強いリンク</strong>は、１つのHouse内に着目数字Xをもつセルが２個ある状態です。
+			以下の左図は、行・列・ブロックのHouseにある強いリンクを示しています。
+			強いリンクは、一方のセルについて「Xである」あるいは「Xでない」のいずれでも、他方のセルに「Xでない」あるいは「Xである」と伝播します。<br><br></li>
+			
+			<li><strong>弱いリンク</strong>は、１つのHouse内に着目数字Xをもつセルが３個以上ある状態です。
+				以下の右図は、行・列・ブロックのHouseにある弱いリンクを示しています。
+				弱いリンクでは、あるセルが「Xである」の場合に残りのセルは「Xでない」と伝播します。強いリンクは弱いリンクでもあります。<br><br></li>
+
+		</ul>
+		<p style="text-align:center">
+			<img src="images/img25/img25a.png" width="469" height="217">
+		</p>
+		<br>
+	
+		<h4>（2）セル間リンクの要素クラス（UCellLink）</h4>
+		<p>セル間リンクの要素クラスは、GNPZ_Analyzerクラスの内部クラスとして定義しています。
+		流れでこのようになっていますが、単独のクラスでもよいでしょう。GNPXでも変更の可能性があります。</p>
+
+		<pre class="prettyprint linenums lang-C "><small>public class UCellLink: IComparable{
+    public int               ID;       //初期値はtfx 外部で再設定する
+    public int               tfx;
+    public int               type;
+    public bool              SFlag;    //T:Strong
+    public bool              LoopFlag; //ループ形成の最後のリンク
+    public bool              BVFlag;   //両端セルがbivalue
+    public readonly int      no;
+    public readonly UCell    UCe1;
+    public readonly UCell    UCe2;
+    public int               rc1{ get{ return UCe1.rc; } }
+    public int               rc2{ get{ return UCe2.rc; } }
+    public readonly Bit81    B81;
+
+    public UCellLink(){}
+    public UCellLink( int tfx, int type, int no, UCell UCe1, UCell UCe2, bool SFlag=false ){
+        this.tfx=tfx; this.type=type; this.no=no; this.SFlag=SFlag; 
+        this.UCe1=UCe1; this.UCe2=UCe2; this.ID=tfx;
+        BVFlag = UCe1.FreeBC==2 && UCe2.FreeBC==2;
+        B81=new Bit81(rc1); B81.BPSet(rc2);
+    }
+
+    public UCellLink Reverse(){
+        UCellLink ULK=new UCellLink(tfx,type,no,UCe2,UCe1,SFlag);
+        return ULK;
+    }
+                    
+    public int CompareTo( object obj ){
+        UCellLink Q = obj as UCellLink;
+        if( this.type!=Q.type ) return (this.type-Q.type);
+        if( this.no  !=Q.no   ) return (this.no-Q.no);
+        if( this.rc1 !=Q.rc1  ) return (this.rc1-Q.rc1);
+        if( this.rc2 !=Q.rc2  ) return (this.rc2-Q.rc2);
+        return (this.ID-Q.ID);
+    }
+    public override bool Equals( object obj ){
+        UCellLink Q = obj as UCellLink;
+        if( Q==null )  return true;
+        if( this.type!=Q.type || this.no!=Q.no )   return false;
+        if( this.rc1!=Q.rc1   || this.rc2!=Q.rc2 ) return false;
+        return true;
+    }
+    public override string ToString(){
+        string st=&quot;ID:&quot;+ID.ToString().PadLeft(2)+ &quot; type:&quot;+type +&quot; no:&quot;+no;
+        st +=  &quot; rc1:&quot;+rc1.ToString().PadLeft(2)+ &quot; rc2:&quot;+rc2.ToString().PadLeft(2); 
+        return st;
+    }
+}</small></pre>
+  	
+		<h4>(3)セル間リンクの管理用クラス(CellLinkMan)</h4>
+		<p>セル間リンクの管理用クラスです。リンクの生成やリンク利用での補助的関数を持ちます。</p>
+		<pre class="prettyprint linenums lang-C "><small>public class CellLinkMan{
+    private GNPX_AnalyzerMan pAnMan;
+    private List&lt;UCell&gt;   pBDL{ get{ return pAnMan.pBDL; } }      
+    private Bit81[]       pHouseCells;
+    public  int           SWCtrl;
+    public  List&lt;UCellLink&gt;[] CeLK81;//セルチエインの制御
+
+    public CellLinkMan( GNPX_AnalyzerMan pAnMan ){
+        this.pAnMan = pAnMan;
+        this.pHouseCells = AnalyzerBaseV2.HouseCells;
+        SWCtrl=0;
+    }
+
+    public void Initialize(){ SWCtrl=0; }
+            
+    public void PrepareCellLink( int swSW ){
+        if( (swSW.DifSet(SWCtrl))==0 )  return;
+
+        if( SWCtrl==0 ) CeLK81=new List&lt;UCellLink&gt;[81];
+        _SrtongLinkSearch(true); //strong link
+        _WeakLinkSearch( );      //weak link
+        SWCtrl |= swSW; 
+
+        foreach( var P in CeLK81 ) if(P!=null) P.Sort();
+    } 
+        
+    public void  ResetLoopFlag(){
+        foreach( var P in CeLK81.Where(p=&gt;p!=null) ){ P.ForEach(Q=&gt;Q.LoopFlag=false); }
+    }
+    private void _SrtongLinkSearch( bool weakOn ){
+        for( int tfx=0; tfx&lt;27; tfx++ ){
+            for( int no=0; no&lt;9; no++){
+                int noB = 1&lt;&lt;no;
+                List&lt;UCell&gt; PLst = pBDL.IEGetCellInHouse(tfx,noB).ToList();
+                if( PLst.Count!=2 ) continue;
+                UCell UC1=PLst[0], UC2=PLst[1];
+
+                SetLinkList(tfx,1,no,UC1,UC2);
+                SetLinkList(tfx,1,no,UC2,UC1);
+                    
+                if( weakOn ){
+                    SetLinkList(tfx,2,no,UC1,UC2);
+                    SetLinkList(tfx,2,no,UC2,UC1);
+                }
+            }  
+        }               
+    #region Debug Print
+    //    foreach( var P81 in CeLK81.Where(p=&gt;p!=null) ) P81.Sort();
+    //    __NLPrint( CeLK81 );
+    #endregion Debug Print
+    }
+    private void _WeakLinkSearch( ){
+        for( int tfx=0; tfx&lt;27; tfx++ ){
+                for( int no=0; no&lt;9; no++){
+                int noB = 1&lt;&lt;no;
+                List&lt;UCell&gt; PLst = pBDL.IEGetCellInHouse(tfx,noB).ToList();
+                if( PLst.Count&lt;=2 ) continue;
+
+                bool SFlag=(PLst.Count==2);
+                for( int n=0; n&lt;PLst.Count-1; n++){
+                    UCell UC1=PLst[n];
+                    for( int m=n+1; m&lt;PLst.Count; m++ ){
+                        UCell UC2=PLst[m];
+                        SetLinkList(tfx,2,no,UC1,UC2,SFlag);
+                        SetLinkList(tfx,2,no,UC2,UC1,SFlag);
+                    }
+                }
+            }  
+        }     
+    #region Debug Print
+    //    foreach( var P81 in CeLK81.Where(p=&gt;p!=null) ) P81.Sort();
+    //    __NLPrint( CeLK81 );
+    #endregion Debug Print
+    }  
+    private void __NLPrint( List&lt;UCellLink&gt;[] CeLkLst ){
+        Console.WriteLine();
+        int nc=0;
+        foreach( var P81 in CeLkLst.Where(p=&gt;p!=null) ){
+            foreach( var P in P81 ){
+                int type = P.type;
+                int no   =  P.no;
+                int rc1  =  P.rc1;
+                int rc2  = P.rc2;
+
+                string st = &quot;  No:&quot; + (nc++).ToString().PadLeft(3);
+                st += &quot;  type:&quot; + type + &quot;  no:&quot; + (no+1);
+                if( type &lt;= 2 ){
+                    st += &quot;  rc[&quot; + rc1.ToString(&quot;00&quot;) + &quot;]r&quot; + ((rc1/9)+1);
+                    st +=  &quot;c&quot; + ((rc1%9)+1) + &quot;-b&quot; + (rc1.ToBlock()+1);
+                    st += &quot; --&gt; rc[&quot; + rc2.ToString(&quot;00&quot;) + &quot;]r&quot; + ((rc2/9)+1);
+                    st += &quot;c&quot; + ((rc2%9)+1) + &quot;-b&quot; + (rc2.ToBlock()+1);
+                }
+                else{
+                    st += &quot; &quot; + ((rc1&lt;10)? &quot;r&quot;+rc1: &quot;c&quot;+(rc1-10));
+                    st += ((rc2&lt;10)? &quot;r&quot;+rc2: &quot;c&quot;+(rc2-10));
+                }
+                Console.WriteLine(st);
+            }
+        }
+        // Console.WriteLine( &quot;Capacity:&quot; + CellLinkList.Capacity );
+    }   
+
+    public  void SetLinkList( int tfx, int type, int no, UCell UC1, UCell UC2, bool SFlag=false ){
+        var LK =new UCellLink(tfx,type,no,UC1,UC2,SFlag);
+        int rc1=UC1.rc;
+        if( CeLK81[rc1]==null ) CeLK81[rc1]=new List&lt;UCellLink&gt;();
+        if( !CeLK81[rc1].Contains(LK) )  CeLK81[rc1].Add(LK);
+    } 
+
+    public bool ContainsLink( UCellLink LK ){
+        List&lt;UCellLink&gt; P=CeLK81[LK.rc1];
+        return (P!=null && P.Contains(LK));
+    }
+    public IEnumerable&lt;UCellLink&gt; IEGetCellInHouse( int typB ){
+        foreach( var P in CeLK81.Where(p=&gt;p!=null) ){
+            foreach( var Q in P.Where(q=&gt;((q.type&typB)&gt;0)) ) yield return Q;
+        }
+    }
+    public IEnumerable&lt;UCellLink&gt; IEGetNoType( int no, int typB ){
+        foreach( var P in CeLK81.Where(p=&gt;p!=null) ){
+            foreach( var Q in P.Where(q=&gt;((q.no==no)&&(q.type&typB)&gt;0)) ) yield return Q;
+        }
+    }
+
+    public IEnumerable&lt;UCellLink&gt; IEGetRcNoType( int rc, int no, int typB  ){
+        var P=CeLK81[rc];
+        if( P==null ) yield break;
+        foreach( var LK in P.Where(p=&gt; ((p.no==no)&&(p.type&typB)&gt;0)) ){
+            yield return LK;
+        }
+        yield break;
+    }
+    public IEnumerable&lt;UCellLink&gt; IEGet_CeCeSeq( UCellLink LKpre ){
+        var P=CeLK81[LKpre.rc2];
+        if( P==null ) yield break;
+        foreach( var LKnxt in P ){
+            if( Check_CellCellSequence(LKpre,LKnxt) ) yield return LKnxt;
+        }
+        yield break;
+    }
+    public IEnumerable&lt;UCellLink&gt; IEGetRcNoBTypB( int rc, int noB, int typB ){
+        var P=CeLK81[rc];
+        if( P==null ) yield break;
+        foreach( var LK in P ){
+            if( ((1&lt;&lt;LK.no)&noB)&gt;0 && ((LK.type&typB)&gt;0) ) yield return LK;
+        }
+        yield break;
+    }
+
+    public bool Check_CellCellSequence( UCellLink LKpre, UCellLink LKnxt ){ 
+        int noP=LKpre.no, noN=LKnxt.no;
+        UCell UCX=LKpre.UCe2;
+        switch(LKpre.type){
+            case 1:
+                switch(LKnxt.type){
+                    case 1: return (noP!=noN);  //S-&gt;S
+                    case 2: return (noP==noN);  //S-&gt;W
+                }
+                break;
+            case 2:
+                switch(LKnxt.type){
+                    case 1: return (noP==noN);  //W-&gt;S
+                    case 2: return ((noP!=noN)&&(UCX.FreeBC==2)); //W-&gt;W
+                }
+                break;
+        }
+        return false;
+    }
+}</small></pre>
+	
+		<h4 id="ConnectedCells">(3)関係セルの参照（ConnectedCells）</h4>
+		<p>１つのセルから関係する全セルを参照する方法（Bit81[]型の変数 ConnectedCells)を導入します。
+		着目セルから見た<strong>影響圏</strong>や、2つのセル間に<strong>共通のHouseがない</strong>ことの確認などに使います。
+		ConnectedCellsはクラスBit81型の配列で、要素は他のBit81型変数と集合演算ができます。この配列は様々な解析アルゴリズムで用います。
+		これらは、解析アルゴリズムの基本クラスの静的関数として定義します。<br><br></p>
+		<p style="text-align:center">
+			<img src="images/img25/img25b.png" width="469" height="217">
+		</p>
+		
+			<pre class="prettyprint linenums lang-C"><small>public partial class AnalyzerBaseV2{
+    static public Bit81[] ConnectedCells;    //軸セル(rc)に関連するセル
+    static public Bit81[] ConnectedCellsRev; //軸セル(rc)に関連しないセル(廃止予定）
+    static public Bit81[] HouseCells;        //行列ブロック(0-26)の関連セル
+        
+    static  AnalyzerBaseV2( ){
+        SetConnectedCells(); //関連性フィルター作成
+    }
+    
+    static private void SetConnectedCells(){
+        if( ConnectedCells!=null )  return;
+        ConnectedCells    = new Bit81[81];
+        ConnectedCellsRev = new Bit81[81];
+
+        for( int rc=0; rc&lt;81; rc++ ){
+            Bit81 BS = new Bit81();
+            foreach( var q in __IEGetCellsConnectedRC(rc) ) BS.BPSet(q);
+            BS.BPReset(rc);
+            ConnectedCells[rc]    = BS;
+            ConnectedCellsRev[rc] = BS ^ 0x7FFFFFF;
+        }
+
+        HouseCells = new Bit81[27];
+        for( int tfx=0; tfx&lt;27; tfx++ ){
+            Bit81 tmp=new Bit81();
+            foreach( var q in __IEGetCellInHouse(tfx) ) tmp.BPSet(q);
+            HouseCells[tfx] = tmp;
+        }
+    }
+    static private IEnumerable&lt;int&gt; __IEGetCellsConnectedRC( int rc ){ 
+        int r=0, c=0;
+        for( int kx=0; kx&lt;27; kx++ ){
+            switch(kx/9){
+                case 0: r=rc/9; c=kx%9; break; //行   
+                case 1: r=kx%9; c=rc%9; break; //列
+                case 2: int b=rc/27*3+(rc%9)/3; r=(b/3)*3+(kx%9)/3; c=(b%3)*3+kx%3; break;//ブロック
+            }
+            yield return r*9+c;
+        }
+    }
+    static private IEnumerable&lt;int&gt; __IEGetCellInHouse( int tfx ){ //nx=0...8
+        int r=0, c=0, tp=tfx/9, fx=tfx%9;
+        for( int nx=0; nx&lt;9; nx++ ){
+            switch(tp){
+                case 0: r=fx; c=nx; break;//行
+                case 1: r=nx; c=fx; break;//列
+                case 2: r=(fx/3)*3+nx/3; c=(fx%3)*3+nx%3; break;//ブロック
+            }
+            yield return (r*9+c);
+        }
+    }
+}</small></pre>
+
+
+<!-- ======================================================================== -->				
+		
+	</article>
+</section>
+	
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

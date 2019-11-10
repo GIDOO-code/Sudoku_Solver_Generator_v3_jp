@@ -1,0 +1,252 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+	<title>数独 アルゴリズム 順列</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+
+
+<body id="page" onload="prettyPrint()">
+	<a id="pageTop"></a> 
+    <header>
+        	<img src="images/imgTop/ImageTop3.jpg" >
+    </header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+
+<!-- ========================================================================== -->
+     
+    <section id="menuList">
+    	<aside>
+    		<ul>
+	            <li><a href="page11.html">順列</a></li>
+	            <li><a href="page12.html">組合せ</a></li>
+            
+	            <li><a href="page13.html">盤面・セル・候補数字の表記法　ハウス</a></li>
+	            <li><a href="page14.html">ラテン方陣</a></li>
+	        </ul>
+	    </aside> 
+	</section>
+	
+<!-- -------------------------------------------------------------------------- -->
+
+    <section id="main"> 
+    	<article>	
+    		<a id="permutation"></a><br>
+			<h4>●順列</h4>
+			<img src="images/imgTop/download_image.png" width="48">
+			<a href="download/PermutationTest.lzh" download="PermutationTest.lzh">PermutationTest.lzh</a>
+	    	   
+            <p>  
+            	数独を始めとする論理パズルを解くプログラムでは、順列・組合せを多く用います。<br>
+            	順列・組合せは、ネット上のライブラリーなどが見つかると思いますが、ひとつ重要な機能が必要です。<br>
+            	例えば、６個から５つを選ぶ順列で(6P5) を生成したとします（”1,2,3,4,5”）。
+            	これを用いてある事象群を評価しているとき、２番目の事象で誤りと分かったら３番目以降の評価は意味がないので中止します。
+            	すなわち次の順列(”1,2,3,4,6”)、さらに次の順列(”1,2,3,5,4”)、…も意味がなく、
+            	これらは飛ばして順列(”1,3,2,4,5”)に進むのが合理的です。<br>
+            	このように、次々に順列を生成するとき順列の位置を指定してスキップする機能が必要です。<br>
+            	GNPxでは、順列を扱うのは次のクラスです。実際に順列を生成するコードは、以下で示します。
+            </p>
+            
+	<pre class="prettyprint linenums lang-C ">
+public class Permutation{
+    private int N=0;
+    private int R=0;
+    public int[] Pnum=null; 
+    private bool First=false;
+
+    public Permutation( int N, int R=-1 ){  
+        this.N = N;
+        this.R = R;
+        if( N&gt;0 ) Pnum = Enumerable.Range(0,this.R).ToArray();
+    }
+
+    public bool Successor( int rx=-1 ){
+        if( First ){ First=false; return (Pnum!=null); }
+        (順列生成 以下のコード参照)
+    }
+}</pre>
+            
+      		<p>  
+            	Permutationを次のように使います。<br>
+            	Successorをcallするたびに次の順列を生成し、生成している間は戻り値はtrueで、最後に達するとfalseになります。
+            	次の順列生成の変更位置を指定して、無駄な生成をスキップします。変更位置はダイナミックに変更できます。位置指定は0から(順列サイズ-1)で、これ以外の場合または指定を省略したときは、スキップ機能は働きません。
+            </p>
+            
+	<pre class="prettyprint linenums lang-C ">
+var perm = new Permutation(6,5);
+int px=4;
+while(perm.Successor(px) ){
+    (評価処理)(次の順列生成の変更位置pxを設定）)
+}</pre><br>
+     
+            <h3>○テストプログラム（PermutationTest）</h3>
+	<pre class="prettyprint linenums lang-C ">
+class Program{  //（コンソールプログラム）
+    static void Main( string[ ] args ) {
+    Console.WriteLine( "* Permutation(4) *\n  Successor()" );
+    Permutation perm = new Permutation(4);
+    while(perm.Successor())  Console.WriteLine( perm );
+
+    Console.WriteLine( "\n* Permutation(4,2) *\n  Successor()" );
+    perm = new Permutation(4,2);
+    while(perm.Successor())  Console.WriteLine( perm );
+
+       Console.WriteLine( "\n* Permutation(4,3) *\n  Successor(1)" );
+       perm = new Permutation(4,3);
+       while(perm.Successor(1))　Console.WriteLine( perm );
+
+       Console.Write( "\nキィ入力で終了：" );
+           Console.ReadKey();
+        }
+    }
+}</pre><br>
+	<h3>○実行結果（左:順列生成結果　右:関数内部の作業データ）</h3>
+	<pre class="LG">
+* Permutation(4) *
+ 0 1 2 3   0 1 2 3
+ 0 1 3 2   0 1 3 2
+ 0 2 1 3   0 2 1 3
+ 0 2 3 1   0 2 3 1
+ 0 3 1 2   0 3 1 2
+ 0 3 2 1   0 3 2 1
+ 1 0 2 3   1 0 2 3
+ 1 0 3 2   1 0 3 2
+ 1 2 0 3   1 2 0 3
+ 1 2 3 0   1 2 3 0
+ 1 3 0 2   1 3 0 2
+ 1 3 2 0   1 3 2 0
+ 2 0 1 3   2 0 1 3
+ 2 0 3 1   2 0 3 1
+ 2 1 0 3   2 1 0 3
+ 2 1 3 0   2 1 3 0
+ 2 3 0 1   2 3 0 1
+ 2 3 1 0   2 3 1 0
+ 3 0 1 2   3 0 1 2
+ 3 0 2 1   3 0 2 1
+ 3 1 0 2   3 1 0 2
+ 3 1 2 0   3 1 2 0
+ 3 2 0 1   3 2 0 1
+ 3 2 1 0   3 2 1 0
+
+* Permutation(4,2) *
+ 0 1   0 1 2 3
+ 0 2   0 2 1 3
+ 0 3   0 3 1 2
+ 1 0   1 0 2 3
+ 1 2   1 2 0 3
+ 1 3   1 3 0 2
+ 2 0   2 0 1 3
+ 2 1   2 1 0 3
+ 2 3   2 3 0 1
+ 3 0   3 0 1 2
+ 3 1   3 1 0 2
+ 3 2   3 2 0 1
+
+* Permutation(4,3) *
+ 0 1 2   0 1 2 3
+ 0 2 1   0 2 1 3
+ 0 3 1   0 3 1 2
+ 1 0 2   1 0 2 3
+ 1 2 0   1 2 0 3
+ 1 3 0   1 3 0 2
+ 2 0 1   2 0 1 3
+ 2 1 0   2 1 0 3
+ 2 3 0   2 3 0 1
+ 3 0 1   3 0 1 2
+ 3 1 0   3 1 0 2
+ 3 2 0   3 2 0 1
+ </pre>  
+ 	<h3>○順列生成クラス(全体)</h3>
+ 	<p>順列生成クラスの全体を示します。<br>
+Successorでは、以下の手順で次の順列を求めています。<br>
+　①前回の順列あるいはスキップ指定から変更すべき位置を求める。<br>
+　②変更すべき位置よりも前で使用済みの数字を除くリスト作る。<br>
+　③変更位置以降に使える数字を埋める。</p>
+
+	<pre class="prettyprint linenums lang-C ">
+public class Permutation{
+    private int   N=0;
+    private int   R=0;
+    private int[] Pwrk=null;
+    public  int[] Pnum=null;
+    private bool  First;
+ 
+    public Permutation( int N, int R=-1 ){
+        this.N=N;
+        this.R=R;
+        if( R&lt;=0 || R>N ) this.R=N;
+        if( N>0 ){
+        Pwrk = Enumerable.Range(0,N).ToArray();
+        Pnum = Enumerable.Range(0,this.R).ToArray();
+        }
+        First=true;//(最初の順列はコンストラクターで作成済み)
+    }
+
+    public bool Successor( int rx=-1 ){
+        if( First || Pwrk==null ){ First=false; return (Pwrk!=null); }
+        int r = (rx>=0)? rx: R-1;
+        if( r>N-1 ) r=N-1;
+        
+        do{
+            if( r&lt;0 )  break;
+            int A=Pwrk[r];
+    
+          L_1: 
+            if( A>=N-1 ){ r--; continue; }
+            A++;
+            for( int k=0; k&lt;r; k++ ){ if( Pwrk[k]==A ) goto L_1; }        
+            Pwrk[r]=A;　　　//①次の更新位置(r)と数字(A)
+            if( r&lt;N-1 ){           
+                int[] wx = Enumerable.Range(0,N).ToArray();
+                for( int k=0; k&lt;=r; k++ )   wx[Pwrk[k]]=-1;//②使用済み数字を除外
+                int n=0;
+                for( int k=r+1; k&lt;N; k++ ){　//③変更位置以降に数字を埋める
+                    for( ; n&lt;N; n++ ){
+                        if( wx[n]&lt;0 ) continue;
+                        Pwrk[k]=wx[n++];
+                        break;
+                    }
+                }
+            }
+            for( int k=0; k&lt;R; ++k ) Pnum[k]=Pwrk[k];//(外部参照配列にコピー)
+            return true;
+        }while(true);
+        return false;
+    }
+
+    public override string ToString(){
+        string st="";  Array.ForEach( Pnum, p=> st+=(" "+p) );
+        st += "  ";    Array.ForEach( Pwrk, p=> st+=(" "+p) );
+        return st;
+    }
+}
+</pre>
+        </article>    
+    </section>
+    
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+    <footer>
+        <p id="copyright"> Copyright &copy; 2014-  GNPX. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

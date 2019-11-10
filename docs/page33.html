@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 アルゴリズム LockedSet</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	<script src="js/GNPX_Lib.js" type="text/javascript"> </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●LockedSet</h4>
+		<p>数独の高度な解析アルゴリズムでは、<strong>"Locked"</strong>という概念が重要です。
+		<strong>Locked</strong>は、セル(群）の候補数字、候補数字の数、セルの配置関係から生じる制限で、
+		<strong>候補数字が限定される、あるいは候補数字が除外され</strong>ます。
+		 
+		<strong>Locked</strong>にはいくつもの種類があり、その数だけ解析アルゴリズムがあります。<br>
+		（Lockedを訳すと、制限、限定などになると思いますが、あえて訳さずそのまま概念を認めてしまえばよいので、
+		<strong>Locked</strong>を用います）<br>
+		
+		<h4>(1)Naked LockedSet</h4>	
+		<p>
+		LockedSetは最も単純な<strong>Locked</strong>を用いる解析アルゴリズムです。<br>
+		あるhouseについて、<strong>ｎ個のセルに着目するとそれらの候補数字がｎ個のとき</strong>、
+		このセル群の候補数字はLockedされます。したがって同じHouseの非着目セルから候補数字を除外できます。これをｎ次のLockedSetと呼ぶことにします。
+		なお、セル数・候補数字数が５以上の場合は、同じHouseの残りのセル群がLockedSetとなっているので、<strong>５次以上のLockedSetは考えない</strong>という方法もあります。
+		全盤面の数字配列を求めるのであれば必要ありません。しかし、数独の解き方を追求する立場からすると、大きなLockedSetを見つけるのは楽しいではありませんか。
+		後ほど、それらをお見せします。<br>
+		次の図は”２セル２数字"のLockedSeｔのイメージです。ab、cd、efにLockedしたとき、色付きセルの候補数字からこれらの候補数字が除外できます。
+		ヒトがLockedSetを探すときは、同じブロック内にあるのに比べてブロック間のLockedSet(下の図の中央)は数段難しいですが、プログラムの場合はほとんど変わりなく求まります。</p>	
+		<img src="images/img33/img33a.gif"　height="210" width="713">
+		<br>
+		<p>
+		次の図は、３セル３数字(左）と４セル４数字(右）のLockedSetが成立したセル群のイメージとです。外枠は同じハウス（行・列・ブロック）に属することを表します。
+		上段は各セルに同じように候補数字が含まれるケースです。下段のように一部の候補数字が欠けている場合もあります。</p>
+		
+		<img src="images/img33/img33b.gif" width="614"><br>
+
+		<h4>(2)Hidden LockedSet</h4>	
+		<p>
+		Naked LockedSetはセル内に候補数字が明確に表れている場合ですが、セル内に他の候補数字もありLockedSetを構成する数字群が隠れている場合があります。<br>
+		次の図は上３行を抜き出したもので、候補数字＃26に着目するとr1c13のみにあり、２次のHidden LockedSetが成立します（次数はNakedのときと同様）。<br>
+		Hidden LockedSetの場合には、最初に述べたLockedSetの定義を修正する必要があります。<br>
+		あるhouseについて、<strong>ｎ個の候補数字に着目するとそれらがｎ個のセルのみにあるとき</strong>、このセル群の着目候補数字はLockedされます。したがって同じセル群の非着目候補数字は除外できます。<br>
+		</p>
+		<img src="images/img33/img33c.jpg">
+		
+		<p>次の図は、LockedSetの例です。<br>左図は2-LockedSet (Naked）で、行R6（ブロックb5）のr6c45はいずれも候補数字#38で、2セル2数字の2-LockedSet(Naked)が成立します。
+		右図は2-LockedSet(Hidden）で、8列c8に着目すると、数字#16の入るのはr19c8の2セルのみで2セル2数字の2-LockedSetが成立します。従って、この2セルでは残りの数字#349は候補から除外できます。</p>
+	
+		<img src="images/img33/img33d.jpg" height="270" width="270">
+		<img src="images/img33/img33e.jpg" height="270" width="270">
+		<p class="newLine">2.891..54....4..7.41.5..6.2...7...61....2....69...1...5.2..7.16.4..6....16..594.3<br>
+						   ...857.....736.2...6...48..142..86..57......26.35..47..216.3........1.......2....</p>
+			   
+		<p>次の左図は　3-LockedSet(Hidden）の例です。ブロックb4のr4c23とr5c2は、候補数字249に関して3セル3数字の3-LockedSetが成立します。
+		右図は　4-LockedSet (Naked）の例です。9列のr3789c9に着目すると、数字3459について4セル4数字の4-LockedSetが成立します。また、右図の9列のr1456c9については4セル4数字の4-LockedSet(Hidden)が成立しています。黄色のセル群と対となるLockedSetです。</p>
+	
+		<img src="images/img33/img33f.jpg" height="270" width="270">
+		<img src="images/img33/img33g.jpg" height="270" width="270">
+		<p class="newLine">4......6..1..62..9.624.........8..5.1.8..7.4.......9..9...3.2..58....63..36.5...7<br>
+						   .8.........4..71.2.6718.39..2..3.9....38.52....5.1..3..18.4.67.4.96..8.........1.</p>
+	</article>
+
+	<article>
+		<br>
+		<p>次に進む前に、ここでちょっと考えてください。<br>
+		このページの最初の例(左上から2789…の図）は r6c45 #38 のLockedPair（２D：２次のLockedSet）を表示してしていますが、
+		他にもLockedSetがあります。探してみてください。<br></p>
+		<div onclick="OnCliｃｋ('sub1')">
+			<p><string>しっかり考えてください。ここの楽しみは一度しかありません。</string></p>
+			<img src="images/img33/down.png" height="10" >
+		</div>
+
+		<div class="sub" id="sub1">
+			<p>この問題のこの場面にはLockedSetが25個あります。互いに相補関係にあるLockedSetも見つかります。 
+			<ol>
+				<li>Locked Pair[2D] r6c45 #38</li>
+				<li>Locked Pair[2D] r38c3 #39</li>
+				<li>Locked Pair[2D] r45c7 #58</li>
+				<li>Locked Pair[2D] r89c8 #28</li>
+				<li>Locked Pair[2D] r4c1 r5c2 #38</li>
+				<li>Locked Pair[2D] (hidden) r8c79 #57</li>
+				<li>Locked Pair[2D] (hidden) r46c3 #45</li>
+				<li>Locked Pair[2D] (hidden) r45c6 #45</li>
+				<li>Locked Pair[2D] (hidden) r68c7 #27</li>
+				<li>Locked Pair[2D] (hidden) r56c8 #34</li>
+				<li>Locked Triple[3D] r238c6 #238</li>
+				<li>Locked Triple[3D] r389c8 #289</li>
+				<li>Locked Triple[3D] r4c7 r5c79 #589</li>
+				<li>Locked Triple[3D] r45c7 r6c9 #578</li>
+				<li>Locked Triple[3D] (hidden) r356c8 #349</li>
+				<li>Locked Triple[3D] (hidden) r5c89 r6c8 #349</li>
+				<li>Locked Triple[3D] (hidden) r5c8 r6c78 #234</li>
+				<li>Locked Quartet[4D] r8c1368 #2389</li>
+				<li>Locked Quartet[4D] r4c7 r5c79 r6c9 #5789</li>
+				<li>Locked Quartet[4D] r4c7 r5c7 r6c79 #2578</li>
+				<li>Locked Quartet[4D] (hidden) r6c3789 #2457</li>
+				<li>Locked Quartet[4D] (hidden) r5c89 r6c78 #2349</li>
+				<li>Locked Quartet[4D] (hidden) r5c8 r6c789 #2347</li>
+				<li>Locked Set[5D] r4c7 r5c79 r6c79 #25789</li>
+				<li>Locked Set[5D] (hidden) r5c89 r6c789 #23479</li>
+			</ol>
+			<p>さらに、この場面には別ページで解説する Fishもあります。<br>
+			<ol>
+				<li>SwordFish #3 BaseSet:R348 CoverSet:C136</li>
+				<li>JellyFish #3 BaseSet:R2348CoverSet:C1346</li>
+			</ol>
+			<p>
+			全数字配列が求まる経路(解析手法）はいくつもあります。手法は異なるが、確定や除外されるセル・数字は同じ場合もあります。</p>
+			
+			<img src="images/img33/LockedSets.png" height="810" width="810">
+			<p>Fish(左：SwordFish 右：JellyFish）</p>
+			<img src="images/img33/img33SwordFish.png" height="156" width="156">
+			<img src="images/img33/img33JellyFish.png" height="156" width="156">
+		</div>
+	</article>
+	
+	<article>
+	<br><br>
+	<h4>○解析プログラム</h4>
+		<p>LockedSetは、House内のセル群の候補数字を除外する方法です。以下に解析プログラムを示します。<br>
+	この解析ルーティンは、細かな処理のほとんどを下請け関数に任せています。下請け関数には、次数とnaked/hiddenの２つの引数があり、２番目の引数がfalseのときnakedのLockedSetを解きます。trueのときhiddenを解きます。下請け関数は次の手順で候補数字を限定し、除外します。<br>
+[22]解析対象とするhouseを決める。<br>
+[23]houseに属する未決定セル群を求める。<br>
+[24]houseに属する未決定セル群の数をncFとする。<br>
+[27-29]houseに属するセルから、指定次数(sz)のセルを選ぶ。残りのセルを非選択セルとする。<br>
+[32-36]選択セル群と非選択セル群それぞれの候補数字群を求める（noBSel：選択セル群の候補数字、noBNon：非選択セル群の候補数字）。<br>
+[37] 選択セル群と非選択セル群の候補数字に共通数字が無ければ、次のhouseへ。<br>
+<br>
+[nakedの判定]<br>
+[41]選択セル群の候補数字の数は次数と一致<br>
+<br>
+[hiddenの判定]<br>
+[58] 非選択セル群の候補数字の数は [ncF-次数] と一致<br>
+<br>
+nakedの判定は、定義そのものの「セル数＝候補数字数」です。<br>
+hiddenの判定について、少し解説します。まず、対象とするhouseのまだ決定していないセル群は、「セル数＝候補数字数」です。これは数独のルールから明らかでしょう。次に選択セル群は「セル数＝次数＜候補数字数」です。ここで選択セル群から「次数個の候補数字」を選ぶと、「選んだ候補数字は非選択セル群にない」というのがHiden LockedSetの成立条件です。このとき「非選択セル群のセル数＝(ncF－次数) 」であり、「非選択セル群の候補数字数＝(ncF－次数)」ですから、結局「非選択セル群のセル数＝非選択セル群の候補数字数」が成り立ちます。<br>
+hiddenの判定方法のように、少し考察を加えると、スマートなアルゴリズムができることがあります。
+</p>
+
+		<pre class="prettyprint linenums lang-C"><small>public class LockedSetGen: AnalyzerBaseV2{
+    public LockedSetGen( GNPX_AnalyzerMan AnMan ): base(AnMan){ }
+
+    public override void Initialize(){ /*Console.WriteLine(&quot;LockedSetGen&quot;);*/ }
+
+    public bool LockedSet2(){ return LockedSetSub(2,false); }
+    public bool LockedSet3(){ return LockedSetSub(3,false); }
+    public bool LockedSet4(){ return LockedSetSub(4,false); }
+    public bool LockedSet5(){ return LockedSetSub(5,false); }
+    public bool LockedSet6(){ return LockedSetSub(6,false); }
+    public bool LockedSet7(){ return LockedSetSub(7,false); }
+    
+    public bool LockedSet2Hidden(){ return LockedSetSub(2,true); } 
+    public bool LockedSet3Hidden(){ return LockedSetSub(3,true); }
+    public bool LockedSet4Hidden(){ return LockedSetSub(4,true); }
+    public bool LockedSet5Hidden(){ return LockedSetSub(5,true); } 
+    public bool LockedSet6Hidden(){ return LockedSetSub(6,true); }
+    public bool LockedSet7Hidden(){ return LockedSetSub(7,true); }
+
+    public bool LockedSetSub( int sz, bool HiddenFlag ){
+        string resST=&quot;&quot;;
+        for( int tfx=0; tfx&lt;27; tfx++ ){
+            List&lt;UCell&gt;　BDLstF = pBDL.IEGetCellInHouse(tfx,0x1FF).ToList();
+            int ncF = BDLstF.Count;
+            if( ncF&lt;=sz ) continue;
+            
+            Combination cmbG = new Combination(ncF,sz);
+            while( cmbG.Successor() ){
+                BDLstF.ForEach(p=&gt;p.Selected=false);
+                Array.ForEach(cmbG.Cmb, p=&gt; BDLstF[p].Selected=true );
+
+                int noBSel=0, noBNon=0;
+                BDLstF.ForEach(p=&gt;{
+                    if( p.Selected ) noBSel |= p.FreeB;
+                    else             noBNon |= p.FreeB;
+                } );                  
+                if( (noBSel&noBNon)==0 ) continue;
+
+                //===== Naked Locked Set =====
+                if( !HiddenFlag ){
+                    if( noBSel.BitCount()==sz ){
+                        resST=&quot;&quot;;
+                        foreach( var P in BDLstF ){
+                            if( P.Selected ){
+                                P.SetNoBBgColor(noBSel,AttCr,SolBkCr);
+                                resST += &quot; &quot;+P.rc.ToRCString();
+                            }
+                            else P.CancelB=P.FreeB&noBSel;
+                        }
+                        resST = resST.ToString_SameHouseComp()+&quot; #&quot;+noBSel.ToBitStringN(9);
+                        _LockedSetResult(sz,resST,HiddenFlag);
+                        if( !AnMan.SnapSaveGP() )  return true;
+                    }
+                }
+
+                //===== Hidden Locked Set =====
+                if( HiddenFlag ){
+                    if( noBNon.BitCount()==(ncF-sz) ){
+                        resST=&quot;&quot;;
+                        foreach( var P in BDLstF.Where(p=&gt;p.Selected) ){
+                            P.CancelB = P.FreeB&noBNon;
+                            P.SetNoBBgColor(noBSel,AttCr,SolBkCr);
+                            resST += &quot; &quot;+P.rc.ToRCString();
+                        }
+                        int nobR = noBSel.DifSet(noBNon);
+                        resST = resST.ToString_SameHouseComp()+&quot; #&quot;+nobR.ToBitStringN(9);
+                        _LockedSetResult(sz,resST,HiddenFlag);
+                        if( !AnMan.SnapSaveGP() )  return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void _LockedSetResult( int sz, string resST, bool HiddenFlag ){
+        SolCode = 2;
+        string LSmsg=&quot;&quot;;
+        switch(sz){
+            case 2: LSmsg = &quot;Pair[2D]&quot;; break;
+            case 3: LSmsg = &quot;Triple[3D]&quot;; break;
+            case 4: LSmsg = &quot;Quartet[4D]&quot;; break;
+
+            case 5: LSmsg = &quot;Set[5D]&quot;; break;
+            case 6: LSmsg = &quot;Set[6D]&quot;; break;
+            case 7: LSmsg = &quot;Set{7D}&quot;; break;
+
+        }
+        string SolMsg=&quot;Locked&quot;+LSmsg;
+        if( HiddenFlag ) SolMsg += &quot; (hidden)&quot;;
+        SolMsg += &quot; &quot;+resST;
+        Result=SolMsg;
+        ResultLong=SolMsg;
+    }
+}</small></pre>
+
+
+	</article>
+	<br><br>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

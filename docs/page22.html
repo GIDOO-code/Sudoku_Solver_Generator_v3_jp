@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 C# 問題のクラス(UProblem)</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+</head>
+
+<body id="page" onload="prettyPrint()">
+	
+	<a id="pageTop"></a>
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg">	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<a id="UProblem"></a>
+		<h4>●問題のクラス(UProblem) </h4>
+		<ul>
+			<li>最初の４項目は、問題の連続番号(ID)、名前(Name)、作成時刻(TimeStamp)、解読時のコメント(solMessage)で、
+			全て識別用の項目です。解析アルゴリズムには関係しません。</li><br>
+			<li>DifficultyLevelは問題の難易度です。これはヒトが解くときの難易度ではありません。以下の解析アルゴリズムでは、プログラムで調べるのは簡単だが、ヒトがそれを発見するのは極めて困難な方法がたくさん出てきます。
+			そこでの複雑さをもとに適当に(主観的な適切度で）定めたものです。なお、人手で解けるのはレベル1,2,3,4くらいまでです。
+			今のところ、レベル10ほどまで割り振っていますが、未実装の解析アルゴリズムのアイデアもあり、さらに増えると思います。</li><br>
+			<li>Insolubleは、解が２つ以上ある、矛盾がありひとつも解が存在しないときに真となる論理変数です。</li><br>
+			<li>BDLは問題を表す81セルのListです。配列としてもよいのですが、Listコレクションの様々な機能を使いたいので、こちらを採用しました。 </li><br>
+		</ul>
+
+		<pre class="prettyprint linenums lang-C "><small>public class UProblem{
+    public int     ID;
+    public string  Name; 
+    public string  TimeStamp;
+    public string  solMessage;
+
+    public int     DifficultyLevel;    //-1:初期状態　0:手動作成
+    public bool    Insoluble;    //解なし
+    public List&lt;UCell&gt; BDL;
+
+    public UProblem( ){
+        ID=-1;
+        BDL = new List&lt;UCell&gt;();
+        for( int rc=0; rc&lt;81; rc++ ) BDL.Add(new UCell(rc));
+        this.DifficultyLevel = 0;
+    }
+    public UProblem( List&lt;UCell&gt; BDL ){
+        this.BDL  =  BDL;
+        this.DifficultyLevel = 0;
+    }
+    public UProblem( int ID, List&lt;UCell&gt; BDL, string Name="", int DifLvl=0 ){
+        this.ID = ID;
+        this.BDL = BDL;
+        this.Name = Name;
+        this.DifficultyLevel = DifLvl;
+    }
+
+    public UProblem Copy( ){
+        UProblem SDP = (UProblem)this.MemberwiseClone();
+        SDP.BDL = new List&lt;UCell&gt;();
+        foreach( var P in BDL ) SDP.BDL.Add(P.Copy());
+        return SDP;
+    }
+}</small>
+</pre>
+	</article>
+	</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+<footer>
+	<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+</footer>
+
+
+</body>
+
+</html>

@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 XYZ-Wing</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	
+	<style type="text/css">
+		.auto-style1 { color: #FF0505; }
+	</style>
+</head>
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<p>XYZ-Wingは <a href="page53a.html">"ALS Death Blossom"</a>に発展的に集約します。</p>
+		<h4 id="xyzWing">●XYZ-Wing（基本形）</h4>
+		<p><a href="#XYZWingALS">　➡XYZ-WingALS(発展形)</a></p>
+		<p>XYZ-Wingは、ブロックと行（または列）の交差を用いる解析アルゴリズムです。<br>
+		候補数字がxyzのセルに着目したとき、同じ行に属する他のセルの候補数字がxzで、同じブロックに属する他のセルの候補数字がyzとします（左図）。
+		このとき、着目セルと同じブロック・行のセルから候補数字zが除外できます（右図）。行は列に置き換えても同様です。</p>
+		<p style="text-align:center">
+			<img src="images/img44/img44aEng.png" width="517" height="205">
+		</p><br>
+		<p>候補数字とセル数を次数としたとき、4次以上の解析アルゴリズム、WXYZ-Wing(4次)、VWXYZ-Wing(5次)、UVWXYZ-Wing(6次)があります。
+		いずれの場合も、軸となるセル以外はbivalue(候補数字が２つ)セルです。
+		また、	3次の場合は行とブロックにそれぞれ1セルの配置でしたが、4次以上ではその配置には様々なバリエーションがあります（次の図）。
+		いずれも*印のセルはLockedにあり、このセルから数字Zが除外されます。
+		ただし、”全てのセルに着目数字があり、着目セル以外は全てbivalueセル”の条件は相当に厳しく、４次以上のパターンは稀にしか現れません。
+		bivalueの条件を緩和する方法(XYZ-WingEx）は、後半で示します。</p>
+		
+		<p style="text-align:center">
+			<img src="images/img44/img44b.png" width="745" height="361">
+		</p>
+		
+		<p>この解析手法のポイントは、あるセルに着目したとき、そのセルの影響圏にあるbivalueセルを行・ブロック（または列ブロック）で集計すると着目セルの候補数字に一致する場合のLockedです。
+		解析アルゴリズムは次のとおりです。イメージ図のとおりに順に組み立てれば、容易にアルゴリズムが構成できます。
+			<ol>
+				<li>候補数字の数が指定次数のセルについて、順に着目セルとして以下を繰り返す。</li>
+				<li>着目セルの属するブロックを求める。</li>
+				<li>着目セルに含まれる候補数字を、順に着目数字として以下を繰り返す。</li>
+				<li>着目セルに関連し、かつbivalueのセルのビットパターンP0con(Bit81型）を求める。</li>
+				<li>P0conから着目ブロック内分を抽出する（Pinとする）</li>
+				<li>着目セルを軸とする行または列を指定して以下を繰り返す(housu番号を指定する）</li>
+				<li>P0conから、指定行（または列）上でかつ着目ブロック外を抽出する（Poutとする）。</li><br>
+				以上で調べるセルが選択された。<br><br>
+				<li>PinとPouの候補数字を求める（FreeBinとFreeBoutとする）</li>
+				<li>FreeBinとFreeBoutの和集合が着目セルの候補数字に一致することを確認する。</li>
+				<li>着目ブロック内の着目行(または着目列）に着目数字を候補に持つセルを探す（これが除外されるセル・数字）。
+					除外できるセル・候補数字があるとき、（高次）XYZ-Wingが成立する</li>
+			</ol>
+		</p>
+	
+		<p>XYZ-Wingの例を示します。(左：XYZ-Wing 右：WXYZ-Wing)</p>
+		<img class="imgL" src="images/img44/img44c.png" style="width: 271px; height: 270px">
+		<img class="imgL" src="images/img44/img44d.png" style="width: 271px; height: 270px">
+		<small>
+		<p class="newLine">8.9..3..4.24...61..7...6.297.2.4.......3.2.......5.1.225.1...4..47...83.1..7..2.5<br>
+						   ..3..4...1.86539...5.7...83..6.37.9.7..4....54.....72.....9.51...9..6...8..3..26.<br></p></small>
+
+		<h4>○XY-Wingの解析プログラム</h4>
+		<p>XY-Wingの解析プログラムです。上記のアルゴリズムを順にコード化してあります。<br>
+		</p>
+	<pre class="prettyprint linenums lang-C"><small>public partial class SimpleUVWXYZwingGen: AnalyzerBaseV2{
+    public List&lt;UCell&gt; FBCX;
+
+    public SimpleUVWXYZwingGen( GNPX_AnalyzerMan AnMan ): base(AnMan){
+            FBCX=null;
+    }
+
+    public override void Initialize(){ FBCX=null; }
+
+    public bool XYZwing( ){    return _UVWXYZwing(3); }  //XYZ-wing
+    public bool WXYZwing( ){   return _UVWXYZwing(4); }  //WXYZ-wing
+    public bool VWXYZwing( ){  return _UVWXYZwing(5); }  //VWXYZ-wing
+    public bool UVWXYZwing( ){ return _UVWXYZwing(6); }  //UVWXYZ-wing
+
+    private bool _UVWXYZwing( int wsz ){     //simple UVWXYZwing
+        if(FBCX==null) FBCX = pBDL.FindAll(p=&gt;p.FreeBC==wsz);
+        if( FBCX.Count==0 ) return false;
+
+        bool wingF=false;
+        foreach( var P0 in FBCX ){  //着目セル
+            int b0=P0.b;            //着目ブロック
+            foreach( int no in P0.FreeB.IEGet_BtoNo() ){ //着目数字
+                int noB=1&lt;&lt;no;
+                Bit81 P0con = (new Bit81(pBDL,noB,FreeBC:2)) & ConnectedCells[P0.rc];
+                Bit81 Pin   = P0con&HouseCells[18+P0.b];
+                
+                Bit81 Pout=null, Pin2=null;
+                for( int dir=0; dir&lt;2; dir++ ){ //dir 0:row 1:col
+                    int rcDir = (dir==0)? P0.r: (9+P0.c);
+                    Pin2 = Pin-HouseCells[rcDir];
+                    if( Pin2.IsZero() ) continue;
+                    Pout = (P0con&HouseCells[rcDir])-HouseCells[18+P0.b];
+                    if( Pin2.Count+Pout.Count != (wsz-1) ) continue;
+
+                    int FreeBin  = Pin2.AggregateFreeB(pBDL);
+                    int FreeBout = Pout.AggregateFreeB(pBDL);
+                    if( (FreeBin|FreeBout)!=P0.FreeB ) continue;
+                    Bit81 ELst   = HouseCells[rcDir]&HouseCells[18+P0.b];
+                    ELst.BPReset(P0.rc);
+                    string msg3=&quot;&quot;;
+                    foreach( var E in ELst.IEGet_rc().Select(p=&gt;pBDL[p]) ){
+                        if( (E.FreeB&noB)&gt;0 ){
+                            E.CancelB=noB; wingF=true; 
+                            msg3 += &quot; &quot;+E.rc.ToRCString();
+                        }
+                    }
+                    if(!wingF)  continue;
+                    
+                    //--- ...wing fond -------------
+                    SolCode=2;     
+                    string[] xyzWingName={ &quot;XYZ-Wing&quot;,&quot;WXYZ-Wing&quot;,&quot;VWXYZ-Wing&quot;,&quot;UVWXYZ-Wing&quot;};
+                    string SolMsg = xyzWingName[wsz-3];
+
+                    if( SolInfoDsp ){
+                        P0.SetNoBBgColor(P0.FreeB,AttCr,SolBkCr2);
+                        foreach( var P in Pin2.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr);
+                        foreach( var P in Pout.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr);
+
+                        string msg0=&quot; Pivot: &quot;+P0.rc.ToRCString();
+                        string st=&quot;&quot;; foreach( var rc in Pin2.IEGet_rc() ) st+=&quot; &quot;+rc.ToRCString();
+                        string msg1 = &quot; in: &quot;+st.ToString_SameHouseComp();
+                        st=&quot;&quot;;  foreach( var rc in Pout.IEGet_rc() ) st+=&quot; &quot;+rc.ToRCString();
+                        string msg2 = &quot; out: &quot;+st.ToString_SameHouseComp();
+                        st=&quot;&quot;; foreach( var rc in Pin2.IEGet_rc() ) st+=&quot; &quot;+rc.ToRCString();
+    
+                        ResultLong = SolMsg+&quot;\r&quot;+msg0+ &quot;\r   &quot;+msg1+ &quot;\r  &quot;+msg2+ &quot;\r Eliminated: &quot;+msg3.ToString_SameHouseComp();
+                        Result = SolMsg+msg0+msg1+msg2;      
+                    }
+                    if( !AnMan.SnapSaveGP(true) )  return true;
+                    wingF=false;
+                }
+            }
+        }
+        return false;
+    }
+}</small></pre>
+	</article><br>
+	
+	<article>
+	<h4 id="XYZWingALS">●XYZ-WingALS</h4>
+	<p><a href="#xyzWing">XYZ-Wing</a>は軸となるセルとbivalueセルの組合せのアルゴリズムでしたが、
+	組合わせるブロック内セル群とブロック外セル群はそれぞれがALSを形成しています。
+	そこで、bivalueの条件を外し、軸となるセルとブロック内ALSとブロック外ALSの組合せに拡張しても、XYZ-Wingの論理が成立します。<br><br>
+	次の図はXYZ-Wing(ALS)のイメージです。
+	セル<span class="auto-style1"><strong>＊</strong></span>の着目数字<strong>X</strong>が真のとき、
+	ALS1、ALS2がLockedSetとなり、その結果が軸セルPの候補数字に影響する関係を示しています。
+	軸セルPが着目数字Xを含まないとき(右下図)は、セル<span class="auto-style1"><strong>＊</strong></span>は、
+	両ALS内の着目数字全てと関係を持てる位置でも可能です。</p>
+	
+		<p style="text-align:center">
+			<img src="images/img44/img44eEng.png" >
+		</p><br>
+	<p>XYZ-Wing(ALS)の成立条件と解析アルゴリズムは次のように構成できます。
+	<ol>
+		<li>ALS管理クラスを用いて、全てのALSを生成する。</li>
+		<li>着目セルを選択セル（着目セルの候補数字の数が次数となる。次数指定で軸セルを選ぶのでもよい）</li>
+		<li>着目数字Xを設定する。着目数字は軸セルに含まれない数字でもよい（これは基本形からの拡張）</li>
+		<li>軸セルの行または列を選択する（以下では行選択で解説）</li>
+		<li>選択行で、かつブロック外にある、着目数字Xを含むALS2を選択</li>
+		<li>軸を含むブロック内で、かつ選択行を除く位置にある、着目数字Xを含むALS1を選択</li><br>
+	
+		このように選んだALS１、ALS2は軸セルに対し、影響を及ぼせる位置にある。また、<br>
+		（軸セルの候補数字）⊂（ALS1の候補数字）∪（ALS2の候補数字）　は必要条件。<br><br>
+		
+		<li>タイプ1:軸セルが着目数字Xを候補に含む場合（右上図）：ブロック内の着目行（軸セルは除く）にある着目数字は除外できる。<br><br>
+		
+		<li>タイプ2:軸セルが着目数字Xを候補に含まない場合（右下図）：ブロック内の着目行（軸セルは除く）にある着目数字は除外できる（タイプ1と同じ）。
+		また、着目ブロック外、着目行外で、ALS１とALS２の全ての着目数字に関係する着目数字は除外できる。</li>
+	</ol><br><br>
+	XYZ-Wing(ALS)の例を示します。
+	</p>
+		<img class="imgL" src="images/img44/img44f.png" style="width: 271px; height: 270px">　
+		<img class="imgL" src="images/img44/img44g.png" style="width: 271px; height: 270px">
+		<small>
+		<p class="newLine">7.1..9..8.52...19..8...3.574.3.5.......2.1.......3.7.519.7...3..37...68.8..3..9.1<br>
+						   2.9..3..8.17...63..8...6.259.5.6.......3.2.......9.3.114.6...9..53...48.7..4..2.6<br></p></small>
+
+		<h4>○XYZ-WingALSの解析プログラム</h4>
+		<p>XY-WingALSの解析プログラムです。上記のアルゴリズムを順にコード化してあります。<br>
+		</p>
+	<pre class="prettyprint linenums lang-C"><small>public partial class ALSTechGen: AnalyzerBaseV2{  
+    public bool XYZwingALS( ){
+        ALSMan.ALS_Search(1);
+        if( ALSMan.ALSLst==null || ALSMan.ALSLst.Count&lt;=2 ) return false;
+
+        for( int sz=3; sz&lt;8; sz++ ){
+            if( _XYZwingALSSub(sz) ) return true;
+        }
+        return false;
+    }
+
+    private bool _XYZwingALSSub( int wsz ){ //simple UVWXYZwing
+        List&lt;UCell&gt; FBCX = pBDL.FindAll(p=&gt;p.FreeBC==wsz);
+        if( FBCX.Count==0 ) return false;
+
+        foreach( var P0 in FBCX ){  //着目セル
+            int b0=P0.b;            //着目ブロック
+
+            for( int no=0; no&lt;9; no++ ){
+                int noB=1&lt;&lt;no;
+
+                Bit81 P0con = (new Bit81(pBDL,noB)) & ConnectedCells[P0.rc];
+                Bit81 Pin   = P0con&HouseCells[18+b0];
+
+                for( int dir=0; dir&lt;2; dir++ ){ //dir 0:row 1:col
+                    int rcDir = (dir==0)? P0.r: (9+P0.c);
+                    Bit81 Pin2 = Pin-HouseCells[rcDir];　//ブロック内ALS存在候補位置
+                    if( Pin2.IsZero() ) continue;
+
+                    Bit81 Pout = (P0con&HouseCells[rcDir])-HouseCells[18+P0.b];//ブロック外ALS存在候補位置
+                    foreach( var ALSout in ALSMan.IEGetCellInHouse(1,noB,Pout,rcDir) ){     //ブロック外ALS
+                        int FreeBOut2 = ALSout.FreeB.DifSet(noB);
+                        Bit81 EOut=new Bit81();　    //ブロック外ALSの#no存在位置
+                        foreach( var P in ALSout.UCellLst.Where(p=&gt;(p.FreeB&noB)&gt;0) ) EOut.BPSet(P.rc);
+
+                        foreach( var ALSin in ALSMan.IEGetCellInHouse(1,noB,Pin2,18+b0) ){
+                            int FreeBin2 = ALSin.FreeB.DifSet(noB);
+
+                            Bit81 Ein=new Bit81();   //ブロック内ALSの#no存在位置
+                            foreach( var P in ALSin.UCellLst.Where(p=&gt;(p.FreeB&noB)&gt;0) ) Ein.BPSet(P.rc);
+
+                            int Cover= P0.FreeB.DifSet(ALSout.FreeB|ALSin.FreeB);
+                            if( Cover!=0 ) continue; //内ALSと外ALSの数字が軸セルの数字をカバーしている
+                            
+                            Bit81 Epat= EOut|Ein; //除外セルがカバーすべき全セル
+                            if( Epat.IsZero() ) continue;
+                            bool SolFond=false;
+                            string msg3=&quot;&quot;;
+
+                            int FreeBin3 = P0.FreeB.DifSet(FreeBOut2|FreeBin2); 
+                            foreach( var E in pBDL.Where(p=&gt;(p.FreeB&noB)&gt;0) ){
+                                if( E.rc==P0.rc || Pout.IsHit(E.rc) || Pin2.IsHit(E.rc) )  continue;
+                                if( !(Epat-ConnectedCells[E.rc]).IsZero() )  continue;
+                                if( FreeBin3&gt;0 && !ConnectedCells[E.rc].IsHit(P0.rc) )  continue;
+                                E.CancelB=noB; SolFond=true;
+                                msg3 += &quot; &quot;+E.rc.ToRCString();
+                            }
+
+                            if(SolFond){
+                                SolCode=2;     
+                                string[] xyzWingName={ &quot;XYZ-Wing&quot;,&quot;WXYZ-Wing&quot;,&quot;VWXYZ-Wing&quot;,&quot;UVWXYZ-Wing&quot;};
+                                string SolMsg = xyzWingName[wsz-3]+&quot;(ALS)&quot;;
+
+                                if(SolInfoDsp){
+                                    P0.SetNoBBgColor(P0.FreeB,AttCr,SolBkCr2);
+                                    foreach( var P in ALSin.UCellLst  ) P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr);
+                                    foreach( var P in ALSout.UCellLst ) P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr);
+
+                                    string msg0=&quot; Pivot: &quot;+P0.rc.ToRCString();
+                                    string st=&quot;&quot;; foreach( var P in ALSin.UCellLst ) st+=&quot; &quot;+P.rc.ToRCString();
+                                    string msg1 = &quot; in: &quot;+st.ToString_SameHouseComp();
+                                    st=&quot;&quot;;  foreach( var P in ALSout.UCellLst ) st+=&quot; &quot;+P.rc.ToRCString();
+                                    string msg2 = &quot; out: &quot;+st.ToString_SameHouseComp();
+                                    st=&quot;&quot;; foreach( var rc in Pin2.IEGet_rc() ) st+=&quot; &quot;+rc.ToRCString();
+    
+                                    Result = SolMsg+msg0+msg1+msg2;  
+                                    ResultLong = SolMsg+&quot;\r&quot;+msg0+ &quot;\r   &quot;+msg1+ &quot;\r  &quot;+msg2+ &quot;\r Eliminated: &quot;+msg3.ToString_SameHouseComp();
+
+                                }
+                                if( !AnMan.SnapSaveGP(true) )  return true;
+                                foreach( var E in pBDL.Where(p=&gt;(p.FreeB&noB)&gt;0) ) E.CancelB=0;
+                                SolFond=false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+}</small></pre>
+						   
+	</article>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

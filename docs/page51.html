@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 ALS XY-Wing</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h4>●ALS XY-Wing</h4>		   
+	<p>ALS XY-Wingは３つの<a href="page26.html">ALS</a>を用いる解析アルゴリズムです。
+	次のALS Chainの３ALSの場合です。<br><br>
+	ALS A、B、Cについて、AとCにはRCC xがあり、BとCにはRCC yがあるとします。さらにAとBにはともに数字ｚがあるとします。<br>
+	この状態で、A、B内の全てのｚと関係する(同じhouseに属する)ｚがALS外にあるとき、このｚは除外できます。
+	もしもALS外のｚが真とすると、ALS A、BはLockedSetになり(xはAに、yはBに含まれる）、
+	ALS Cではセル数に対し候補数字が足りなくなります。<br>
+	ALSを用いる解析アルゴリズムの特徴として、ALSが利用できる場面では、多くの場合に同時に多数の解が存在します。
+	また、ALS系の他の解析アルゴリズム解も存在します。ALS XY-Wingでもその性質があります。
+</P>
+	<p style="text-align:center">
+		<img src="images/img51/img51a.png" >
+	</p>
+	
+	<p>ALS XY-Wingの例です。</p>
+
+	<img class="imgL" src="images/img51/img51b.png" style="width:708px; height:496px;">
+	<p class="newLine"><br>8....5..7.7.1.8.6...6.9.8..64.9.7.3...3...7...9.8.2.46..9.8.4...1.5.4.2.4..3....1<br>
+						   4..1....39.7.3.54..539..7....5...3..2963.7154..8...6....4..389..39.4.2.56....9..7<br></p>
+	
+		<h4>○ALS XY-Wing解析プログラム</h4>
+		<p>ALS XY-Wingのサイズは、3つのALSのサイズの合計とし、これの小さい順に探します。
+		また、ALSはサイズ順に並べてあり、探索の打切りに利用しています。<br>
+		ALS XY-Wingの探索は次の手順で行います。
+		<ol>
+			<li>軸となるALS（図のALS C)を設定する。</li><br>
+			<li>2つのALSを組合せで選ぶ（ALS A,ALS Bとする)。</li><br>			
+			<li>ALS Aの条件(Cと異なる、サイズ条件）を調べる。不適なら、スキップ付で次の組合せ選択に進む。</li><br>	
+			<li>ALS A-CのRCCを求める。組合せで前回のALS A-Cと同じなら、RCC算出は省略する。</li><br>	
+			<li>ALS Bの条件(Cと異なる、サイズ条件、ABは重ならない）を調べる。不適なら、スキップ付で次の組合せ選択に進む。</li><br>	
+			<li>ALS B-CのRCCを求める。B-CのRCCはA-CのRCCと異なる。</li><br>	
+			<li>ALS A,BのRCC以外の候補数字ｚについて、ALS外にALS内の全てのｚをカバーするセルを探す。</li>		
+		</ol>
+		</p>
+		<pre class="prettyprint linenums lang-C"><small>public partial class ALSTechGen: AnalyzerBaseV2{
+
+    public bool ALS_XY_Wing( ){
+        ALSMan.ALS_Search(1);
+        if( ALSMan.ALSLst==null || ALSMan.ALSLst.Count&lt;=2 ) return false;
+
+        for( int szT=4; szT&lt;15; szT++ ){    //3ALSのサイズ合計の小さい順に探索
+            if( _ALSXYWingSub(szT) )  return true;
+        }
+        return false;
+    }
+
+    private bool _ALSXYWingSub( int szT ){
+
+        //(ALSはサイズ順にSort済み)    
+        foreach( var UC in ALSMan.ALSLst.Where(p=&gt;p.Size&lt;=szT-2) ){
+            if( !UC.singly ) continue;
+            int szS=szT-UC.Size;
+
+            UALS UA, UB, UApre=null;
+            int nxt=0, RccAC=-1, RccBC=-1;
+            var cmb = new Combination(ALSMan.ALSLst.Count,2);       
+            while( cmb.Successor(nxt) ){
+                nxt=0;
+                UA = ALSMan.ALSLst[cmb.Cmb[0]];
+                if( !UA.singly || UA==UC || UA.Size&gt;szS-1 ) continue;
+                if( UA!=UApre ){
+                    RccAC = ALSMan.GetALSRCC(UA,UC); //RCC
+                    if( RccAC.BitCount()!=1 ) continue;
+                    UApre=UA;
+                }
+
+                UB = ALSMan.ALSLst[cmb.Cmb[1]];
+                if( !UB.singly || UB.Size&gt;(szS-UA.Size) )  continue; //&quot;サイズ順&quot;を利用したスキップ
+
+                nxt=1;                        
+                if( UB==UC || UB.Size!=(szS-UA.Size) ) continue;
+                if( !(UA.B81&UB.B81).IsZero() )    continue; //AB範囲が重なる
+                RccBC = ALSMan.GetALSRCC(UB,UC);      //RCC
+                if( RccBC.BitCount()!=1 ) continue;
+                if( RccAC==RccBC ) continue;
+
+                int EFrB = (UA.FreeB&UB.FreeB).DifSet(RccAC|RccBC);
+                if( EFrB==0 ) continue;
+                foreach( var no in EFrB.IEGet_BtoNo() ){
+                    int noB=(1&lt;&lt;no);
+                    Bit81 UE = new Bit81();
+                    foreach( var P in UA.UCellLst.Where(p=&gt;(p.FreeB&noB)&gt;0)) UE.BPSet(P.rc);
+                    foreach( var P in UB.UCellLst.Where(p=&gt;(p.FreeB&noB)&gt;0)) UE.BPSet(P.rc);
+                
+                    Bit81 TBD = ( new Bit81(pBDL,noB)) - (UA.B81|UB.B81|UC.B81);
+                    foreach( var rc in TBD.IEGet_rc() ){
+                        if( !(UE-ConnectedCells[rc]).IsZero() ) continue;
+                        pBDL[rc].CancelB=noB; SolCode=2;
+                    }
+                
+                    if(SolCode&gt;0){ //===== ALS XY-Wing fond =====
+                        ALSXYWing_SolResult(UA,UB,UC, RccAC, RccBC);
+                        if( !AnMan.SnapSaveGP(true) )  return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }  
+    private void ALSXYWing_SolResult( UALS UA, UALS UB, UALS UC, int RccAC, int RccBC ){
+        string st = &quot;ALS XY-Wing &quot;;            
+        if( SolInfoDsp ){            
+            foreach( var P in UA.UCellLst ) P.SetNoBBgColor(RccAC,AttCr,SolBkCr);
+            foreach( var P in UB.UCellLst ) P.SetNoBBgColor(RccBC,AttCr,SolBkCr2);
+            foreach( var P in UC.UCellLst ) P.SetNoBBgColor(RccAC|RccBC,AttCr,SolBkCr3);
+
+            st += &quot;\r ALS A: &quot;+UA.ToStringRCN();
+            st += &quot;\r ALS B: &quot;+UB.ToStringRCN();
+            st += &quot;\r ALS C: &quot;+UC.ToStringRCN();
+            st += &quot;\r RCC AC: #&quot;+RccAC.ToBitStringN(9);
+            st += &quot;\r RCC BC: #&quot;+RccBC.ToBitStringN(9);
+            ResultLong=st;
+        }
+        Result = &quot;ALS XY-Wing&quot;;
+    }
+}</small></pre>
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

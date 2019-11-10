@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 EmptyRectangle</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link rel="stylesheet" href="styleStandard2.css">
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+		<h4>●EmptyRectangle</h4>
+		<p>EmptyRectangleは、着目数字に関するブロック内セル配置と強いリンクで構成されるパターン型の解析アルゴリズムです。
+		次の図にEmptyRectangleのブロック（□）とブロック内のセル配置（●）と関係パターンを示します(実線：強いリンク、破線：弱いリンク）。○セルが真なら、直接の関係と強いリンクにより、ブロック内のセル（●）はいずれも偽となります。
+		つまり、●のセル群の配置の場合、○セルはLockedにあり、○セルから候補数字が除外されます。
+		EmptyRectangle(<strong>ER</strong>)の名称は、着目するブロックから点線が通過するセルを除く４セルには着目数字がない、ことに由来します。</p>
+		<p style="text-align:center">
+			<img src="images/img41/img41a.png" width="217" height="217">
+		</p>
+		<br>
+		<p>EmptyRectangleの解析アルゴリズムは、上の図を作る手順とおりです。
+		まずは図を十分に理解するのがよいでしょう。
+		<ol>
+			<li>着目数字Xの設定</li>
+			<li>着目ブロックの選択</li>
+			<li>着目ブロック内の軸となるセルの選択</li>
+			<li>軸セルの行・列を除くと、着目ブロック内にERができることを確認</li>
+			<li>着目ブロック外に強いリンクを探す</li>
+			<li>着目ブロックの軸、強いリンクと　四角形を形成する位置に○セルを探す。</li>
+		</ol>
+		
+		<p>EmptyRectangleの例を示します。全て同じ問題の同じ場面での異なるEmptyRectangleです。 
+		下段中央も同じ問題の同じ場面ですが、適用しているアルゴリズムはSkyscraperです。異なるアルゴリズムの適用ですが、上段中央と同じセルで候補が除外されます。 </p>
+		<img src="images/img41/img41b.png" width="240" height="240">
+		<img src="images/img41/img41c.png" width="240" height="240">
+		<img src="images/img41/img41d.png" width="240" height="240">
+		<img src="images/img41/img41e.png" width="240" height="240">
+		<img src="images/img41/img41f.png" width="240" height="240">
+		<small>
+		<p class="newLine">825.3....3..8.7....1.6..8..4..32..1..3..1..7..9..74..3..3..1.2....7.5..1....6.954<br></p></small><br>
+
+		<h4>○EmptyRectangleの解析プログラム</h4>
+		
+		<p>EmptyRectangleの解析プログラムは、前述のアルゴリズムをそのままコード化します。<br>
+		「09」着目ブロック内の着目数字の配置をビット表現し、これを用いて軸によりERの成立をチェックします。<br>
+		[25,30]着目ブロック外に行と列を設定し、これと軸セルの行・列で四角形を作ります。その四角形にあう強いリンクと除外候補セルを探します。<br>
+		このコードはスマートさにやや欠けるので何とか改善したいと思っています。しばらくしたら、このサイトを訪ねてみてください。
+		改良コードがあるかもしれません。</p>
+
+	<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{ 
+    public bool  EmptyRectangle( ){
+        CeLKMan.PrepareCellLink(1);         //strongLink生成
+        
+        for( int no=0; no&lt;9; no++ ){        //着目数字
+            int noB = 1&lt;&lt;no;
+            for( int bx=0; bx&lt;9; bx++ ){    //着目ブロック
+                int erB=pBDL.IEGetCellInHouse(bx+18,noB).Aggregate(0,(Q,P)=&gt;Q|(1&lt;&lt;P.nx));
+                if(erB==0) continue;
+
+                for( int er=0; er&lt;9; er++ ){//ブロック内の着目セル
+                    int Lr=er/3, Lc=er%3;   //ブロックローカル行・列
+                    int rxF = 7&lt;&lt;(Lr*3);    //7=1+2+4
+                    int cxF = 73&lt;&lt;Lc;       //73=1+8+64
+        
+                    if( (erB&rxF)==0 || erB.DifSet(rxF)==0 )  continue; //Lr行(行条件検査)
+                    if( (erB&cxF)==0 || erB.DifSet(cxF)==0 )  continue; //Lc列(列条件検査)          
+                    if( erB.DifSet(rxF|cxF)&gt;0 )               continue; //Lr行+Lc列(ER条件検査)                  
+                    
+                    int r1 = bx/3*3+Lr;     //絶対行に換算
+                    int c1 = (bx%3)*3+Lc;   //絶対列に換算
+
+                    foreach( var P in HouseCells[9+c1].IEGetUCeNoB(pBDL,noB).Where(Q=&gt;Q.b!=bx) ){
+                        foreach( var LK in CeLKMan.IEGetRcNoBTypB(P.rc,noB,1) ){
+                            UCell Elm=pBDL[r1*9+LK.UCe2.c];
+                            if( Elm.b!=bx && (Elm.FreeB&noB)&gt;0 ){ //除外できる数字がある
+                                EmptyRectangle_SolResult( no, bx, LK, Elm );
+                                if( !AnMan.SnapSaveGP(true) )  return true;
+                            }
+                        }
+                    }
+
+                    foreach( var P in HouseCells[0+r1].IEGetUCeNoB(pBDL,noB).Where(Q=&gt;Q.b!=bx) ){
+                        foreach( var LK in CeLKMan.IEGetRcNoBTypB(P.rc,noB,1) ){
+                            UCell Elm=pBDL[LK.UCe2.r*9+c1];
+                            if( Elm.b!=bx && (Elm.FreeB&noB)&gt;0 ){ //除外できる数字がある
+                                EmptyRectangle_SolResult( no, bx, LK, Elm );
+                                if( !AnMan.SnapSaveGP(true) )  return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    private void EmptyRectangle_SolResult(  int no, int bx, UCellLink PLK, UCell PElm ){
+        int noB=(1&lt;&lt;no);
+        SolCode = 2;
+        Result = &quot;EmptyRectangl #&quot;+(no+1) +&quot; in B&quot;+(bx+1);
+        PElm.CancelB = noB;    //キャンセル数字設定 
+        if( !SolInfoDsp ) return;
+            
+        ResultLong = &quot;EmptyRectangl&quot;;
+        PLK.UCe1.SetNoBBgColor( noB, AttCr, SolBkCr2 );  //強いリンクをマーク
+        PLK.UCe2.SetNoBBgColor( noB, AttCr, SolBkCr2 );  //強いリンクをマーク
+            
+        string st=&quot;&quot;; 
+        foreach( var Q in pBDL.IEGetCellInHouse(bx+18,noB) ){
+            Q.SetNoBBgColor(noB,AttCr,SolBkCr);   //empty rectangle
+            st += &quot; &quot;+Q.rc.ToRCString();
+        }
+        string msg=&quot;\r         digit: #&quot;+(no+1) +&quot;\r            ER: B&quot;+(bx+1)+&quot;(&quot;+st.ToString_SameHouseComp()+&quot;)&quot;;
+        msg +=&quot;\r        S-Link: &quot;+PLK.rc1.ToRCString()+&quot;-&quot;+PLK.rc2.ToRCString();
+        msg +=&quot;\rEliminatedCell: &quot;+PElm.rc.ToRCString();
+        ResultLong = &quot;EmptyRectangl&quot;+msg;
+    }
+
+}</small></pre>
+
+
+	</article>
+	<br><br>
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

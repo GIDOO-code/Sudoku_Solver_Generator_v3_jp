@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 SueDeCoq</title>
+
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	}
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h4>●SueDeCoq</h4>
+		<p>SueDeCoqは、この手法を最初に提案した ハンドルネーム&quot;SueDeCoq&quot;に由来する解析アルゴリズムです。
+		SueDeCoqのアルゴリズムを理解するには、若干の飛躍が必要なので、例を用いて段階的に説明します。<br>
+		なお、ここでの説明の多くは、次のHPを参考にしています。<br>
+			http://hodoku.sourceforge.net/en/tech_misc.php#sdc<br><br>
+		次の例は 基本的なSueDeCoqです。左図では、ブロック２のr2c46に着目します。<br>
+		
+		①この２セルには４候補数字#1789があり、同じブロックのr1c5には候補数字#78があります。
+		これらの３セルを合わせて考えると、r2c46の２セルには#19(78)が入ります(r2c46は#78の一方のみで、両方はない）。<br>
+				
+		②２行目について考えると、r2c9には候補数字#19があるので、着目するr2C46の２セルには#(19)78が入ることになります(r2c46は#19の一方のみで、両方はない）。<br>
+		
+		①と②を合わせると、着目するr2c46には#(19)(78)が入ることになり、r2c46は&quot;２セルに２数字&quot;のLockedとなっています。
+		ただし、２数字ペアのどちらかは決まっていません。<br>
+				
+		この状態で２行目のr2c3の#１はr2c9との関係で着目セルR2C46のLockedを壊す（r2c46に入る数字が足りなくなる）ので入れることは出来ません(r2c3=#1は偽)。
+		同様に、ブロック２のr1c4の#8は、r1c5との関係で着目セルr2c46のLockedを壊すので、入れることは出来ません(r1c4=#8は偽)。<br><br>
+		
+		右図では、ブロック1のr3c123に着目します。これらの３セルには５候補数字#12456があります。	
+		左図と同様に考察すると、r3c123は#6(15)(24)でLockedとなっています（３セルに３数字）。
+		従ってr3c67の#24はこのLockedを壊すので(r3c123に入る数字が足りなくなる)、候補数字から除外できます。</p>
+		
+		<img class="imgL" src="images/img45/img45a.png" style="width: 271px; height: 270px">
+		<img class="imgL" src="images/img45/img45b.png" style="width: 271px; height: 270px">
+		<small>
+		<p class="newLine">.2...3..4.4....25.6...243.8256..8....8..9..2....2..4868.463...2.63....4.9..7...6.<br>
+					       87........9.81.65....79...8.....67316..5.1..97124.....3...57....57.48.1........74<br></p></small>
+		<p>以上の具体例を参考に、SueDeCoqのLockedを定義します。次図はここに登場するセル群の構成です。<br>
+		①ブロック内のセル群(ISPB)と、行(または列）のセル群(ISPR)がある。<br>
+		②2つのセル群は、共通部分(IS)とその他の部分(PBとPR)に分解する。<br>
+		③分解したセル群にはそれぞれ候補数字(IS_FreeB、PB_FreeB、PR_FreeB)をもつとする。<br>
+		④共通部分に対し、その他の部分(PBとPR)のみにある候補数字をPB_FreeBn、PR_FreeBnとする。<br>　(PB_FreeBn= PB_FreeB＼IS_FreeB、PR_FreeBn= PR_FreeB＼IS_FreeB  　＼：差集合)<br>
+		⑤その他部分のみにある候補数字の数をNとする(N=|PB_FreeBn|+|PR_FreeBn|)。</P><br>
+		<p style="text-align:center">
+			<img src="images/img45/img45cEng.png" >
+		</p>
+		
+		<br><p>これらの定義を用いて、SueDeCoqの解析アルゴリズムはつぎのようになります。<br><br>
+		[1]SueDeCoqが成立するためには、まずLockedが成立している必要があります。<br>
+		<ol>
+			<li>共通部分ISのセル数は２または３。</li>
+			<li>その他の部分(PB、PR)は空ではない。</li>
+			<li>共通部分とその他の部分(PBとPR)の全てに共通の候補はない。</li>
+			<li>｜IS｜=｜IS_FreeB｜－（｜PB｜＋｜PR｜－N）　 (|A|は集合Aの要素数）</li>
+		</ol>
+		最後の式は、共通部分のセル数(左辺）と候補数字(右辺）が同じ、つまりLockedであることを表しています。<br>
+		先の例はN=0の場合です。PRとPBにある候補数字がISと共通であり、ISの候補数字の可能性がセル数に一致することを表します。<br>
+		N=1のとき、ISにはない候補数字がPR(またはPB)に１つ加わりますが、同時にPR(PB)のセル数１つ増えます。
+		セル数の増加を独自候補数字の数(N=1)が調整することを表します。<br>
+		以下、Nが順次増えた場合もセル数が対応して増え、Locked判定の条件となっています。<br><br>
+		
+		[2]Lockedが成立すると、あとは実際にLockedを壊すセル・候補数字を探します。
+		</p><br>
+		
+		<p>最初の例に当てはめると次のようです。<br>
+		・共通部分のセル数=2に対し、候補数字は４ある。<br>
+		・行の共通部分以外のセルには、共通部分と同じ候補数字が２個あり、共通部分の候補数字を1個分限定している。<br>
+		・同様に、ブロックの共通部分以外のセルは、共通部分の候補数字を1個分限定している。<br>
+		・その他部分独自の候補数字は、行、ブロックともにない（N=0）。<br>
+		したがって、条件(&quot;2=4-1-1+0&quot;)は成立し、Lockedである。<br>
+		</p>		
+	
+		<p>多数のセルによるSueDeCoqの例を示します。</p>
+		<img class="imgL" src="images/img45/img45d.png" style="width: 271px; height: 271px" >
+		<img class="imgL" src="images/img45/img45e.png" style="width: 271px; height: 271px" >
+		<p class="newLine"><br> </p>
+		<img class="imgL" src="images/img45/img45f.png" style="width: 271px; height: 271px" >
+		<img class="imgL" src="images/img45/img45g.png" style="width: 271px; height: 271px" >
+
+		<small>
+		<p class="newLine">4....59.32..9..1....8..25...27....3.8.93.62.5.4....71...14..6....4..1..29.25....1<br>
+  						   3..5..9...5.2..1.3...3195...8..3.2.45.......19.2.4..8...5423...6.4..1.3...3..8..7<br>
+						   .......12..4..67.8.3718..5.645..1...7.......5...9..647.7..3926.5.34..8..42.......<br>
+						   342...5.........72.9.....1.1396..785684..9123275183..6.27....5.9532.8.4...19..2..<br></p></small>
+		<br>
+		
+		<h4>○SueDeCoqの解析プログラム</h4>
+		<p>SueDeCoqの解析プログラムです。
+		<strong>セル群の構成</strong>と<strong>アルゴリズム</strong>をそのまま表現したコードなので、理解しやすいでしょう。<br>
+		一点だけ補足します。最初に１つのhouseに属するセル群を求めます。これには、新たなクラスを定義してもよいのですが、
+		ALS、ALS管理のクラスのサブクラス(ALS特有の機能を制限した単にセル群を扱うクラス）になるので、ALSクラス、ALS管理クラスを流用します。
+		ただし、セル数よりも候補数字が+n(≧1)多いセル群を求める機能を使います。&quot;fALS。&quot;は偽ALS(fakeAls)を表します。
+		</p>
+		<pre class="prettyprint linenums lang-C"><small>public partial class ALSTechGen: AnalyzerBaseV2{
+    public bool SueDeCoq( ){
+        ALSLinkMan fALS=ALSMan;//(houseに属するセル群を扱うクラスとしてALSを利用)
+        if( fALS.ALS_Search(2)&lt;=3 ) return false;   //+1と+2のfakeALSを生成
+
+        foreach( var ISPB in fALS.ALSLst.Where(p=&gt; p.tfx&gt;=18 && p.Size&gt;=3) ){//ブロックfALS選択
+            if( ISPB.rcbRow.BitCount()&lt;=1 || ISPB.rcbCol.BitCount()&lt;=1 ) continue;　//ブロック枡は複数行・列
+
+            foreach( var ISPR in fALS.ALSLst.Where(p=&gt; p.tfx&lt;18 && p.Size&gt;=3) ){　//行fALS選択
+                if( (ISPR.rcbBlk&ISPB.rcbBlk)==0 ) continue; //ブロックb0と交差あり
+                if( ISPR.rcbBlk.BitCount()&lt;2 )     continue; //行(列)fALSは複数ブロック
+
+                //交差部のセル構成は同じか
+                if( (ISPB.B81&HouseCells[ISPR.tfx]) != (ISPR.B81&HouseCells[ISPB.tfx]) ) continue;
+
+                Bit81 IS = ISPB.B81&ISPR.B81;                //◆交差部(Bit81表現)
+                if( IS.Count&lt;2 ) continue; 　                //交差部は2セル以上
+                if( (ISPR.B81-IS).Count==0 ) continue;       //行(列)ALSに交差部以外の部分がある                    
+
+                Bit81 PB = ISPB.B81-IS;                      //(ISPBのIS外)
+                Bit81 PR = ISPR.B81-IS;                      //(ISPRのIS外)
+                int IS_FreeB = IS.AggregateFreeB(pBDL);      //(交差部数字)
+                int PB_FreeB = PB.AggregateFreeB(pBDL);      //(ISPBのIS外の数字)
+                int PR_FreeB = PR.AggregateFreeB(pBDL);      //(ISPRのIS外の数字)
+                if( (IS_FreeB&PB_FreeB&PR_FreeB)&gt;0 ) continue;
+
+                //A.DifSet(B)=A-B=A&(B^0x1FF)
+                int PB_FreeBn = PB_FreeB.DifSet(IS_FreeB);   //ブロックの交差部に無い数字
+                int PR_FreeBn = PR_FreeB.DifSet(IS_FreeB);   //行(列)の交差部に無い数字
+
+                int sdqNC = PB_FreeBn.BitCount()+PR_FreeBn.BitCount();  //交差部外確定の数字数
+                if( (IS_FreeB.BitCount()-IS.Count) != (PB.Count+PR.Count-sdqNC) ) continue;
+
+                int elmB = PB_FreeB | IS_FreeB.DifSet(PR_FreeB); //ブロックの除外数字 
+                int elmR = PR_FreeB | IS_FreeB.DifSet(PB_FreeB); //行(列)の除外数字                
+                if( elmB==0 && elmR==0 ) continue;
+
+                foreach( var P in _GetRestCells(ISPB,elmB) ){ P.CancelB|=P.FreeB&elmB; SolCode=2; }
+                foreach( var P in _GetRestCells(ISPR,elmR) ){ P.CancelB|=P.FreeB&elmR; SolCode=2; }
+
+                if(SolCode&gt;0){//--- SueDeCoq fond -----
+                    SolCode=2;
+                    SuDoQueEx_SolResult( ISPB, ISPR );
+                    if( ISPB.Level&gt;=3 || ISPB.Level&gt;=3 ) Console.WriteLine(&quot;Level-3&quot;);
+                    if( !AnMan.SnapSaveGP(true) )  return true;
+                }
+            }
+        }
+        return false;
+    }
+    public IEnumerable&lt;UCell&gt; _GetRestCells( UALS ISP, int selB ){
+        return pBDL.IEGetCellInHouse(ISP.tfx,selB).Where(P=&gt;!ISP.B81.IsHit(P.rc));
+    }
+
+    private void SuDoQueEx_SolResult( UALS ISPB, UALS ISPR ){
+        Result=&quot;SueDeCoq&quot;;
+
+        if( SolInfoDsp ){
+            ISPB.UCellLst.ForEach(P=&gt; P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr) );
+            ISPR.UCellLst.ForEach(P=&gt; P.SetNoBBgColor(P.FreeB,AttCr,SolBkCr) );
+
+            string ptmp = &quot;&quot;;
+            ISPB.UCellLst.ForEach(p=&gt;{ ptmp+=&quot; r&quot;+(p.r+1)+&quot;c&quot; + (p.c+1); } );
+
+            string po = &quot;\r Cells&quot;;
+            if( ISPB.Level==1 ) po += &quot;(block)  &quot;;
+            else{ po += &quot;-&quot;+ISPB.Level+&quot;(block)&quot;; }
+            po += &quot;: &quot;+ISPB.ToStringRCN();
+
+            po += &quot;\r Cells&quot; + ((ISPR.Level==1)? &quot;&quot;: &quot;-2&quot;);
+            po += ((ISPR.tfx&lt;9)? &quot;(row)&quot;:&quot;(col)&quot;);
+            po += ((ISPR.Level==1)? &quot;    &quot;: &quot;  &quot;);
+            po += &quot;: &quot;+ISPR.ToStringRCN();
+            ResultLong = &quot;SueDeCoq&quot;+po;
+        }
+    }
+}</small></pre>
+
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>

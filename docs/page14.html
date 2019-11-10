@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    
+    <title>数独 アルゴリズム ラテン方陣</title>
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<link href="styleStandard2.css" rel="stylesheet">
+
+	<style type="text/css">
+		.auto-style1 {
+			background-color: #FFFF00;
+		}
+		.auto-style2 {
+			font-size: small;
+		}
+		.auto-style3 {
+			color: #456299;
+		}
+	.auto-style4 {
+	font-family: "ＭＳ ゴシック";
+}
+	</style>
+</head>
+
+
+
+<body id="page">
+	<a id="pageTop"></a> 
+    <header>
+        	<img src="images/imgTop/ImageTop3.jpg" >
+    </header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+
+<!-- ========================================================================== -->        
+    <section id="menuList">
+    	<aside>
+    		<ul>
+	            <li><a href="page11.html">順列</a></li>
+	            <li><a href="page12.html">組合せ</a></li>
+            
+	            <li><a href="page13.html">盤面・セル・候補数字の表記法　ハウス</a></li>
+	            <li><a href="page14.html">ラテン方陣</a></li>
+	        </ul>
+	    </aside> 
+	</section>
+<!-- -------------------------------------------------------------------------- -->
+    <section id="main">     
+    	<article><br>
+    		<a id="lattinSquare"></a> 
+            <h4>●ラテン方陣</h4>
+            
+            <img src="images/imgTop/download_image.png" width="48">
+            <a href="page17.html">LatinSquareExer.zip ダウンロード</a>
+  
+    <p>
+			ラテン方陣は、ｎ×ｎの枡に１～ｎの数字を縦１列・横１行にダブりなく配置したものです。<br>
+			数独の解は、９×９のラテン方陣にさらに全体を３×３のブロックに区切り、ブロックについてもダブりなく１～９の数字を配置する、と制約したものです。
+			９×９のラテン方陣は5.525×10<sup>27</sup>ありますが、ブロック制約付の９×９のラテン方陣(数独の解)は6.671×10<sup>21</sup>と約１/1,000,000になります。
+			(正確には、5524751496156892842531225600、6670903752021072936960) <br>
+			<span class="auto-style3">
+			<span class="auto-style2">【参考】Frazer Jarvis, June 20, 2005,Enumerating possible Sudoku grids,<br>
+			　　　http://www.afjarvis.staff.shef.ac.uk/sudoku/sudoku.pdf</span><br><br>
+			</span>GNXPでは、数え上げ自体は目的ではないので、たくさんあることだけ覚えておけばよいでしょう(全数に対する何らかの処理は工夫しないと困難)。
+			ここでは、いくつかの目的でラテン方陣を生成する簡単なアプリケーションを作ります。<br>
+			１つは、2.2で解説した順列クラスの応用です。<br>
+			２つは、数独問題を作る方法の準備です。<br>
+			３つは、数独アプリケーションのGUIに慣れていただくことです。<br>
+			アプリケーションのGUIは、数独の解法を開発するために必ずしも必要ではありませんが、習得していると他の開発でも効率が上がるので、
+			LatinSquareExerを動かしてみてください。 
+			</p>
+			
+			<h4>○ステップ１</h4>
+			<p>
+			6.671×10<sup>21</sup>個のラテン方陣をそのまま作ってもよいのですが、本質的に同じものは省きたいので、ブロック１(左上ブロック)の数字を固定します。
+			これは、ブロック１の数字を{a<sub>k</sub>|k=1～9}としたとき、方陣全体に{a<sub>k</sub>→k}の変換を施すと左の方陣に変換できることによります。 </p>
+      
+			<img src="images/latin/latin1.gif">
+			<h4>○ステップ２</h4>
+			<p>
+			ブロックB2とB3に入る数字を考えます。最初はブロックB2の1行目に{4,5,6}が入るケースです。{}は、順番は任意であることを表します。
+			すなわち、ブロック制約ありのラテン方陣のブロックB2の1行目が“4,5,6”なら、列C4,C5,C6を任意に交換してもそれはブロック制約ありラテン方陣であることによります。
+			このとき、ブロックB3の1行目は{7,8,9}に決まります。さらにブロックB2の3行目は{1,2,3}となり、ブロックB2の2行目{7,8,9}となるので、
+			結局ブロックB2の1行目が{4,5,6}ならブロックB2とB3の全てが決まります。ブロックB2の1行目が{7,8,9}の場合も同様に決まります。
+			このパターンを“456,789”型とします。なお、{abc}の並び方は6通り(3!)あるので（abc,acb,bac,bca,cab,cba）、
+			“456,789”型は2×(3!)<sup>6</sup>＝93312通りあります。 
+			</p>
+			<p>
+			<img src="images/latin/latin2.gif" width="600"></p>
+			
+			<h4>○ステップ３</h4>
+			<p>
+			ブロックB2の1行目に{4,5,7}が入るケースです。このとき、B3の1行目は{6,8,9}となります。
+			ブロックB2の２，３行目は、｛a,b,c｝={1,2,3}として、{8,9,a}{6,b,c}、 
+			ブロックB3の２，３行目は{7,b,c}{4,5,a}となります。abcの選び方は組合せ（<sub><span class="auto-style4">3</span></sub>C<sub><span class="auto-style4">1</span></sub>）で3通りあります。
+			このパターンを“457,689”型とします。ブロックB2の1行目に入る数字パターンは{4,5,7}の外に、
+			{4,5,8}、{4,5,9}、{4,6,7}、{4,6,8}、{4,6,9}、{5,6,7}、{5,6,8}、{5,6,9}の
+			合計9通りあるので、“457,689”型は、2×9×3×(3!)<sup>6</sup>＝2519424通りあります。 
+			</p>
+			<img src="images/latin/latin3.gif" width="600"><br>
+			
+			<h4>○ステップ4</h4>
+			<p>
+			ブロックB4、ブロックB7についてもステップ2,3と同じようにパターンを決めることができます。</p>
+			
+			<p>
+			ここまで、たどり着いたかた（あるいはワープした方）は、ラテン方陣生成アプリケーションLatinSquareExer）を動かしてみるとよいでしょう。
+			ブロックB2、B3、B4、B7を選択すると、B5689ボタンの下に、このパターンのブロック制約付ラテン方陣の数を表示します。
+			B5689ボタンをクリックすると個々のラテン方陣順に表示します。ブロックB2、B3、B4、B7の設定により数は違いますが、
+			2620～6280(<span class="auto-style1">確認が必要</span>）のラテン方陣があることが示されます。ブロック１を固定しているので1/9!ですが、
+			これを集計したのが、数独の解となりうるブロック制約付ラテン方陣の数6.671×10<sup>21</sup>になります。
+			数独の解となる数字配列がどれだけ多くあるか、体感してみてください。<br><br>
+			ブロック制約付ラテン方陣の数を数え上げるには、ここで紹介したこと以外のことも用いて（問題を小さくして）、
+			実際に数えあげます。興味のある方は、先の文献をみるとよいでしょう。<br>
+			また、数独解析プログラムを持っている方は、このルーテインとつなげれば問題作成プログラムが作れます。
+			</p>
+			<img src="images/latin/latin4.jpg" width="600"></article>    
+    </section>
+    <footer>
+        <p id="copyright"> Copyright &copy; 2014-  GNPX. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

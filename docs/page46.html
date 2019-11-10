@@ -1,0 +1,353 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>数独 MultiColoring</title>
+	
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css" >
+	<script src="google-code-prettify/prettify.js" type="text/javascript"> </script>
+	
+	<script src="lib/jquery.js" type="text/javascript"></script>
+	<script src="lib/jquery.cookie.js" type="text/javascript"></script>
+	<script src="js/jquery.treeview.js" type="text/javascript"></script>
+	<script src="js/treeView.js" type="text/javascript" ></script>
+	
+	<script src="js/naviHeader3.js" type="text/javascript" > </script>
+	<script src="js/naviAlgorithm2.js" type="text/javascript" > </script>
+	
+	<link rel="stylesheet" href="css/jquery.treeview.css">
+	<link rel="stylesheet" href="css/screen.css">
+
+	<link href="styleStandard2.css" rel="stylesheet">
+	<style type="text/css">
+		.ulNone{ list-style-type:none; }
+	</style>
+</head>
+
+
+<body id="page" onload="prettyPrint()">
+	<header>
+		<img src="images/imgTop/ImageTop3.jpg" >
+	</header>
+
+    <script type="text/javascript"> writeNaviHeader(); </script>
+	
+<!-- ========================================================================== -->
+<section id="menuList">
+	<aside>
+		<script type="text/javascript"> writeNaviAlgorithm(); </script>	
+	</aside>
+</section>
+
+<!-- -------------------------------------------------------------------------- -->
+<section id="main">
+	<article><br>
+	<h4>●(multi) Coloring</h4>
+		<p>Coloringは、着目数字を強いリンクでつなぐ解析アルゴリズムです。ここでは４タイプの(Multi)Coloringを示します。最初に実例を示します。</p>
+		
+		<img class="imgL" src="images/img46/img46a.png" style="width: 271px; height: 271px" >
+		<img class="imgL" src="images/img46/img46b.png" style="width: 271px; height: 271px" >
+		<p class="newLine"><big><strong>　　           　　Trap 　　　　　    　　　　　　　Wrap</strong></big></p>
+		<img class="imgL" src="images/img46/img46c.png" style="width: 271px; height: 271px" >
+		<img class="imgL" src="images/img46/img46d.png" style="width: 271px; height: 271px" >
+		<p class="newLine"><big><strong>　　         　　  MultiColors Type1 　       　　　MultiColors Type2</strong></big></p>
+
+		<small>
+		<p class="newLine">.48...1.3567.1.2..91...4...........1.3..75.....1.9.67419...8..7.....1...6..2.93..<br>
+						   ..91.....7..86....386259...86...13...93...81...73...69...413678....96..4.....81..<br>
+						   ..36.....2..53....459218...62...39...48...75...58...36...126873....89..1.....56..<br>
+						   5.143.....3...61.97895........7.4..36.7...9.23..6.2........73959.31...8.....837.1<br></p></small>
+		
+	<h4>(1)Coloring Trap(左上）</h4>				   
+		<p>着目数字を選択し、この数字の強いリンクで結ばれたセル群（これを&quot;連&quot;と名つけます）を交互に２つのグループに分けます。
+		次のイメージ図は、行・列・ブロックの強いリンクで結ばれたセル群を○と□の２つのグループに分類しています。
+		グループに分ける操作を&quot;セルに色をつけて塗り分ける&quot;ことになぞらえて、Coloringと呼びます。リンク数は３以上、セル数は４以上が条件です。<br>
+		この状態で、どちらかは決まっていませんが、一方のグループの全てのセルは着目数字であり、他方は着目数字ではありません。<br>
+		このとき両方のグループ（○と□）と同時に関係する(弱いリンクで繋がる）位置にあるセル（▲）は着目数字を候補に持つことはできません。
+		セル群はセル▲に対しLockedとなっています。左上の実例では、２つのグループを緑色の濃淡で表示しています。</P>
+		<p style="text-align:center">
+			<img src="images/img46/img46eEng.png" >
+		</p>
+	
+	<h4>(2)Coloring Wrap(右上）</h4>				   
+		<p>着目数字を選択し、この数字の強いリンクで結ばれたセルセル群を交互に２つのグループに分けます。
+		これは(1)Trapと同じです。
+		このとき、一方のグループの複数のセルが同じHouseに属するとき、このグループの全セルの候補数字から着目数字を除外でき、
+		他方のセル群は着目数字に確定します。
+		なお、イメージ図は説明のために単純化していますが、強いリンクの繋がりは右上図のように複雑に連結していることもあります。
+		複雑に連結するのは、Trapでも同じように見られます。</P>
+		<p style="text-align:center">
+			<img src="images/img46/img46fEng.png" >
+		</p>
+	
+	<h4>(3)MultiColoring Type1(左下）</h4>				   
+		<p>Multi Colors Type1は、Trapの拡張です。着目数字を選択し、この数字の強いリンクで結ばれたセル群（連）を交互に２つのグループに分けます(塗り分けます)。
+		このColoringは途中で途切れることがあり、その場合は新しいセル群(連)として生成を繰り返します。
+		複数の連が生成できて、異なる連のセルが同じhouseに属している箇所を探します。この箇所は弱いリンク結ばれてるとします。
+		弱いリンクで接続する箇所の２つのセルは同時に着目数字になることはありません。<br>
+		この状態で、弱いリンクで接続するセルとは反対の色を持つセル(それぞれの連にある)と同時に関係する(houseが同じ)位置にあるセル▲は着目数字を候補に持つことはできません。</P>
+		<p style="text-align:center">
+			<img src="images/img46/img46gEng.png" >
+		</p>
+		
+	<h4>(4)MultiColoring Type2(右下）</h4>				   
+		<p>Multi Colors Type2も、Trapの別のタイプの拡張です。Coloringの方法はType1と同じです。
+		一方の連の同じ色のセル(●)が、他の連の両方の色のセル(□と○)と弱いリンクで繋がっているとき、
+		全てのセル●から着目数字は除外できて、全てのセル■は着目数字に確定します。</P><br>
+		<p style="text-align:center">
+			<img src="images/img46/img46hEng.png" >
+		</p>
+	
+
+		<br>
+		
+		<h4>○(multi)Coloringの解析プログラム</h4>
+		
+		<h4>(0)Coloring関数</h4>
+		<p>最初にColoringを行う関数を示します。このルーティンを呼ぶ前に、強いリンクは生成されているものとします。
+		この関数は列挙型で、指定した着目数字のColoring結果を、呼び出しごとに返します。
+		内部処理は、ビットパターンによる処理済み管理と、queueを用いる波及的処理です。
+		着目セルのグループと反対グループにリンク他端を設定して、セルを２つのグループに分けます。
+		１組のグループ分けができたら戻ります。波及的処理は、別のアルゴリズムでも用います。
+		Coloringが求まれば、前述の条件を検索するだけの簡単な処理で、coloringアルゴリズムのプログラムが構成できます。</p>
+
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    private IEnumerable&lt;Bit81[]&gt; _Coloring( int no ){
+        Bit81[] CRL=new Bit81[2];
+        CRL[0]=new Bit81(); CRL[1]=new Bit81(); 
+        Bit81 TBD = new Bit81(pBDL,(1&lt;&lt;no));
+        int  rc1=TBD.FindFirstrc();
+        while( rc1&gt;=0 ){
+            Queue&lt;int&gt; rcQue=new Queue&lt;int&gt;();
+            rcQue.Enqueue(rc1&lt;&lt;1);
+            CRL[0].BPSet(rc1);
+            TBD.BPReset(rc1);
+            while(rcQue.Count&gt;0){
+                rc1 = rcQue.Dequeue();
+                int kx=1-(rc1&1); 
+                rc1 &gt;&gt;= 1;
+                TBD.BPReset(rc1);
+                foreach( var P in CeLKMan.IEGetRcNoType(rc1,no,1) ){
+                    int rc2=P.rc2;
+                    if( !(CRL[0]|CRL[1]).IsHit(rc2) && TBD.IsHit(rc2) ){
+                        CRL[kx].BPSet(rc2); rcQue.Enqueue((rc2&lt;&lt;1)|kx);
+                    }
+                }
+            }
+            yield return CRL;
+
+            if( (rc1=TBD.FindFirstrc()) &lt; 0 ) yield break;
+            CRL=new Bit81[2];
+            CRL[0]=new Bit81(); CRL[1]=new Bit81(); 
+        }
+        yield break;
+    }
+}</small></pre>
+
+		<h4>(1)Colorint Trap</h4>
+		<p>Coloringが成功したら、２つのグループのセルと同時に関係するセルを探します。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public bool Color_Trap( ){
+        CeLKMan.PrepareCellLink(1);    //strongLink生成
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);
+            foreach( Bit81[] CRL in _Coloring(no) ){
+                Bit81 HitB=new Bit81();
+                Bit81 ELM = (new Bit81(pBDL,noB))-(CRL[0]|CRL[1]);
+                foreach( var rc in ELM.IEGet_rc() ){
+                    Bit81 HB = HouseCells[18+rc.ToBlock()];
+                    if( ((ConnectedCells[rc]-HB)&CRL[0]).IsZero() ) continue;
+                    if( ((ConnectedCells[rc]-HB)&CRL[1]).IsZero() ) continue;
+                    HitB.BPSet(rc);
+                }
+                if( !HitB.IsZero() ){
+                    Color Cr  = _ColorsLst[0];
+                    Color Cr1 = Color.FromArgb( 120, Cr.R, Cr.G, Cr.B );     
+                
+                    foreach( var P in HitB.IEGet_rc().Select(p=&gt;pBDL[p]) )   P.CancelB=noB;
+                    foreach( var P in CRL[0].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr);
+                    foreach( var P in CRL[1].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr1);
+                    
+                    SolCode = 2;
+                    string SolMsg=&quot;Coloring Trap #&quot;+(no+1);
+                    Result=SolMsg;
+                    if( SolInfoDsp )  ResultLong=SolMsg;
+                    if( !AnMan.SnapSaveGP(true) )  return true;
+                    HitB=new Bit81();
+                }
+            }
+        }
+
+        return false;
+    }
+}</small></pre>
+
+		<h4>(2)Colorint wrap</h4>
+		<p>Coloringが成功したら、1つのグループのセ複数含むHouseを探します。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public bool Color_Wrap( ){
+        CeLKMan.PrepareCellLink(1);    //strongLink生成
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);
+            foreach( Bit81[] CRL in _Coloring(no) ){
+                Bit81 BD0 = new Bit81(pBDL,noB);
+                Bit81 ELM = BD0-(CRL[0]|CRL[1]);
+                if( ELM.Count==0 ) continue;
+
+                for( int k=0; k&lt;2; k++ ){
+                    for( int dr=0; dr&lt;27; dr++ ){
+                        if( (CRL[k]&HouseCells[dr]).Count&lt;2 ) continue;
+                        Color CrA = _ColorsLst[1];
+                        Color Cr  = _ColorsLst[0];
+                        Color Cr1 = Cr;     
+                        Color Cr2 = Color.FromArgb( 120, Cr.R, Cr.G, Cr.B );
+                        foreach( var P in ELM.IEGet_rc().Select(p=&gt;pBDL[p]) )      P.SetNoBBgColor(noB,AttCr,CrA);
+                        foreach( var P in CRL[1-k].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr1);
+                        foreach( var P in CRL[k].IEGet_rc().Select(p=&gt;pBDL[p]) ){ P.SetCellBgColor(Cr2); P.CancelB=noB; }           
+                        
+                        SolCode = 2;
+                        string SolMsg=&quot;Coloring Wrap #&quot;+(no+1);
+                        Result=SolMsg;
+                        if( SolInfoDsp )  ResultLong=SolMsg;
+                        if( !AnMan.SnapSaveGP(true) )  return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+}</small></pre>
+		<h4>(3)MultiColorint type1</h4>
+		<p>Multi Coloringの場合には、最初にその盤面で可能なグループ分けをすべて求めます([06])。
+		その中から２つの連(グループ分け)を順列で選びます。これらの２つの連に対し、条件を満たすセル探します。
+		このあたりのことは文章で示すよりもイメージ図と対応させて、コードを読むのがよいでしょう。</p>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public bool MultiColor_Type1( ){  
+        CeLKMan.PrepareCellLink(1);    //strongLink生成
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);
+            List&lt;Bit81[]&gt; MCRL = _Coloring(no).ToList();
+            if( MCRL==null || MCRL.Count&lt;2 ) continue;
+            var cmb=new Combination(MCRL.Count,2);
+            while( cmb.Successor() ){
+                Bit81[] CRLa = MCRL[cmb.Cmb[0]];
+                Bit81[] CRLb = MCRL[cmb.Cmb[1]];
+                for( int na=0; na&lt;2; na++ ){
+                    Bit81 HCRLa = new Bit81();
+                    foreach( var rc in CRLa[na].IEGet_rc() ) HCRLa |= ConnectedCells[rc];
+                    for( int nb=0; nb&lt;2; nb++ ){
+                        if( (HCRLa&CRLb[nb]).IsZero() ) continue;
+
+                        Bit81 BD0=new Bit81(pBDL,noB);
+                        Bit81 ELMtry = BD0-(CRLa[na]|CRLb[nb]|CRLa[1-na]|CRLb[1-nb]);
+                        if( ELMtry.Count==0 ) continue;
+                        
+                        bool solF=false;
+                        Bit81 ELM=new Bit81();
+                        foreach( var rc in ELMtry.IEGet_rc() ){
+                            if( !ConnectedCells[rc].IsHit(CRLa[1-na]) ) continue;
+                            if( !ConnectedCells[rc].IsHit(CRLb[1-nb]) ) continue;
+                            pBDL[rc].CancelB=noB; ELM.BPSet(rc); solF=true;
+                        }
+                        if(solF){
+                            Color CrA = _ColorsLst[0];
+                            foreach( var P in ELM.IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,CrA);
+                            for( int k=0; k&lt;2; k++ ){
+                                Bit81[] CRLX = MCRL[cmb.Cmb[k]];
+                                Color Cr  = _ColorsLst[k];
+                                Color Cr1 = Cr;  
+                                Color Cr2 = Color.FromArgb( 120, Cr.R, Cr.G, Cr.B );             
+                                foreach( var P in CRLX[1-k].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr1); 
+                                foreach( var P in CRLX[k].IEGet_rc().Select(p=&gt;pBDL[p]) )   P.SetNoBBgColor(noB,AttCr,Cr2);
+                            }
+
+                            SolCode = 2;
+                            string SolMsg=&quot;MultiColoring Type1 #&quot;+(no+1);
+                            Result=SolMsg;
+                            if( SolInfoDsp )  ResultLong=SolMsg;
+                            if( !AnMan.SnapSaveGP(true) )  return true;
+                            solF=false;
+                        }
+                    }
+                }
+            }
+        }
+        return false;    
+    }  
+}</small></pre>
+
+		<h4>(4)MultiColorint type2</h4>
+		
+		<pre class="prettyprint linenums lang-C"><small>public partial class CellLinkGen: AnalyzerBaseV2{
+    public bool MultiColor_Type2( ){  
+        CeLKMan.PrepareCellLink(1);    //strongLink生成
+        for( int no=0; no&lt;9; no++ ){
+            int noB=(1&lt;&lt;no);
+            List&lt;Bit81[]&gt; MCRL = _Coloring(no).ToList();
+            if( MCRL==null || MCRL.Count&lt;2 ) continue;
+
+            var prm=new Permutation(MCRL.Count,2);
+            while( prm.Successor() ){
+                if( prm.Pnum[0]&lt;prm.Pnum[1] )  continue;
+                Bit81[] CRLa = MCRL[prm.Pnum[0]];
+                Bit81[] CRLb = MCRL[prm.Pnum[1]];
+                if( CRLa[0].IsZero() || CRLa[1].IsZero() ) continue;
+                if( CRLb[0].IsZero() || CRLb[1].IsZero() ) continue;
+
+                Bit81 HCRL0=new Bit81(), HCRL1=new Bit81();
+                foreach( var rc in CRLa[0].IEGet_rc() ) HCRL0 |= ConnectedCells[rc];
+                foreach( var rc in CRLa[1].IEGet_rc() ) HCRL1 |= ConnectedCells[rc];
+
+                for( int nb=0; nb&lt;2; nb++ ){
+                    if( (CRLb[nb]&HCRL0).IsZero() ) continue;
+                    if( (CRLb[nb]&HCRL1).IsZero() ) continue;
+
+                    Color Cr1 = _ColorsLst[0];   
+                    Color Cr2 = Color.FromArgb( 100, Cr1.R, Cr1.G, Cr1.B );
+                    foreach( var P in CRLa[0].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr1);
+                    foreach( var P in CRLa[1].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr2);
+
+                    Cr1 = _ColorsLst[1];   
+                    Cr2 = Color.FromArgb( 100, Cr1.R, Cr1.G, Cr1.B );
+                    foreach( var P in CRLb[1-nb].IEGet_rc().Select(p=&gt;pBDL[p]) ) P.SetNoBBgColor(noB,AttCr,Cr2);
+                    foreach( var P in CRLb[nb].IEGet_rc().Select(p=&gt;pBDL[p]) ){ P.SetCellBgColor(Cr1); P.CancelB=noB; }
+
+                    SolCode = 2;
+                    string SolMsg=&quot;MultiColoring Type2 #&quot;+(no+1);
+                    Result=SolMsg;
+                    if( SolInfoDsp )  ResultLong=SolMsg;
+                    if( !AnMan.SnapSaveGP(true) )  return true;
+                }
+            }
+        }
+        return false;    
+    }    
+}</small></pre>
+
+	</article>
+	
+</section>
+<!-- -------------------------------------------------------------------------- -->	
+<!--
+    <section id="side">
+        <aside>
+            <section>
+                <h2>#####</h2>
+                <img src="images/square.png" width="45" height="45">
+            </section>
+
+        </aside>
+    </section>
+-->
+<!-- ========================================================================== -->
+	<footer>
+		<p id="copyright">Copyright &copy; 2014- GNPX. All rights reserved.</p>
+	</footer>
+
+</body>
+
+</html>
