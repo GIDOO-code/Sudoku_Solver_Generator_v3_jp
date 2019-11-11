@@ -1,5 +1,5 @@
 # Sudoku_Solver_Generator
-数独の問題を 解く・作る プログラムです。使用言語はC#です。
+数独の問題を 解く・作る C#プログラムです。
 解析アルゴリズムは、全て論理的手法で、バックトラックは使いません。
 以下のアルゴリズムを実装しています。
   Single, LockedCandidate, (hidden)LockedSet(2D-7D),
