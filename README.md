@@ -1,5 +1,5 @@
 # Sudoku_Solver_Generator
-![GNPX](/images/GNPX_start.PNG)  
+![GNPX](/images/GNPX_start.PNG)
 
 数独の問題を 解く・作る C#プログラムです。
 解析アルゴリズムは、全て論理的手法で、バックトラックは使いません。
