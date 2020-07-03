@@ -5,13 +5,13 @@
 解析アルゴリズムは、全て論理的手法で、バックトラックは使いません。
 以下のアルゴリズムを実装しています。  
 
-  Single, LockedCandidate, (hidden)LockedSet(2D-7D),
-  (Finned)(Franken/Mutant/Kraken)Fish(2D-7D),
-  Skyscraper, EmptyRectangle, XY-Wing, W-Wing, RemotePair, XChain, XYChain,
-  SueDeCoq, (Multi)Coloring,
-  ALS-Wing, ALS-XZ, ALS-Chain,
-  (ALS)DeathBlossom(Ext.), (Grouped)NiceLoop, ForceChain and
-  GeneralLogic.
+>Single, LockedCandidate, (hidden)LockedSet(2D-7D),
+ (Finned)(Franken/Mutant/Kraken)Fish(2D-7D),
+ Skyscraper, EmptyRectangle, XY-Wing, W-Wing, RemotePair, XChain, XYChain,
+ SueDeCoq, (Multi)Coloring,
+ ALS-Wing, ALS-XZ, ALS-Chain,
+ (ALS)DeathBlossom(Ext.), (Grouped)NiceLoop, ForceChain and
+ GeneralLogic.
 
 プログラム機能として、単解析、複数解析、数独問題作成（数独のパターン、レベル指定が可能）、問題の変換・数独問題の標準化ができます。
 
