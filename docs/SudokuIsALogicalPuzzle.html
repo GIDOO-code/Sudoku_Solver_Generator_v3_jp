@@ -39,14 +39,14 @@
 従って、数独には縦/横/ブロック/セルの合計３２４の制約がある。
 縦/横とブロックの制約は、独立ではない。
 セルの縦/横/ブロック/セルを表すのに、次の図の記号を用いる。<br>
-<img src="file:images/puzzle/CellBlock1.png" height="250"/><br></p>
+<img src="images/puzzle/CellBlock1.png" height="250"/><br></p>
 <hr>
 <h1 id="ステップフェーズ">ステップ（フェーズ）</h1>
 <p>数独を解く中間段階のステップ（フェーズ）と呼ぶ。
 途中段階のステップでは、一部のセルには未確定の数字（候補）がある。
 数独アルゴリズムは、未確定セルの候補数字の真あるいは偽を決定する。
 これにより、次のステップに進む。<br>
-<img src="file:images/puzzle/NextPhase.png" height="250"/><br></p>
+<img src="images/puzzle/NextPhase.png" height="250"/><br></p>
 <hr>
 <h2 id="link-simple-link">Link (simple link)</h2>
 <p>未確定セルの候補数字は、行/列/ブロックの制約が&quot;link&quot;を構成する。
@@ -54,30 +54,30 @@
 <p>具体例を示す。数独の1つのフェーズに注目すると、未確定のセルには候補数字がある。
 各々の候補の数字は、行/列/ブロック/セルの制約で関連付けられた Link を形成する。
 次の図に示す Link は、ほんの一例です。<br>
-<img src="file:images/puzzle/SW_Link_exsample.png" width="300"/><br></p>
+<img src="images/puzzle/SW_Link_exsample.png" width="300"/><br></p>
 <p>2セルのリンクは &quot;Strong link&quot; と呼ばれる。
 3セル以上のリンクは &quot;Weak link&quot; と呼ばれる。
 ”Strong link&quot; と &quot;Weak link&quot; のイメージを以下に示す。</p>
 <p>Strong linkでは、一方は真で他方は偽となる。<br>
-<img src="file:images/puzzle/StrongLink.png" height="250"/><br></p>
+<img src="images/puzzle/StrongLink.png" height="250"/><br></p>
 <p>Weak linkでは、どれかが真で、残りの全てが偽となる。
 どれかが偽のとき、残りのどれが真であるかは決まらない。
 なお、Strong link は Weak link でもあり、
 アルゴリズムで Weak link が求められるとき、Strong link を用いる場合もある。<br>　
-<img src="file:images/puzzle/WeakLink.png" height="250"/><br></p>
+<img src="images/puzzle/WeakLink.png" height="250"/><br></p>
 <h2 id="link-2-als-aic">Link-2 (ALS, AIC)</h2>
 <p>数独アルゴリズムは、linkの組み合わせで構成されている。
 ALS(AlmostLockedSet) と AIC(Alternate Inference Chain) は、linkの拡張である.</p>
 <p>ALSは、行/列/ブロックが共通のn個のセルに n+1個の候補数字がある状態です。
 ALSは、同じ行/列/ブロックの制約の集合体ですが、新しいタイプのリンクと理解するのが良いだろう。<br>
-<img src="file:images/puzzle/ALS.png" height="250"/><br></p>
+<img src="images/puzzle/ALS.png" height="250"/><br></p>
 <p>ALSは、数独を解く上での強力な手段であり、多くの解析アルゴリズムで使われている。<br>
-<img src="file:images/puzzle/ALS_Locked.png" height="250"/><br></p>
+<img src="images/puzzle/ALS_Locked.png" height="250"/><br></p>
 <p>AICは、行（列）とブロックの制約が重なる部分のリンクです。
 たとえば、候補の数字が次のように配置されている場合、Weak linkとなる。
 セル間リンクで構成する NiceLoop などのアルゴリズムは ALS-Link、AIC-Link
 を使うアルゴリズムに拡張できる。<br>
-<img src="file:images/puzzle/AIC_Link.png" height="250"/><br></p>
+<img src="images/puzzle/AIC_Link.png" height="250"/><br></p>
 <hr>
 <h2 id="locked">Locked</h2>
 <p>数独アルゴリズムを理解するには、次のことが重要です。
@@ -88,13 +88,13 @@ ALSは、同じ行/列/ブロックの制約の集合体ですが、新しいタ
 <a href="https://gidoo-code.github.io/Sudoku_Solver_Generator/page2.html">https://gidoo-code.github.io/Sudoku_Solver_Generator/page2.html</a><br></p>
 <h3 id="1single">1)Single</h3>
 <p>”1セルに候補数字が１つの状態は数字が確定する”ことは、数独の定義から自明である。<br>
-<img src="file:images/puzzle/Single.png" height="400"/><br></p>
+<img src="images/puzzle/Single.png" height="400"/><br></p>
 <h3 id="21d-lockedcandidate">2)1D LockedCandidate</h3>
 <p>数独では、行/列とブロックの制約は独立ではない。
 候補が行/列とブロックが重なる位置で限定されている場合、Locked になる。
 Locked を壊す候補数字は偽となる。<br>
-<img src="file:images/puzzle/LockedCandidate1.png" height="275"/><br>
-<img src="file:images/puzzle/LockedCandidate2.png" height="275"/><br></p>
+<img src="images/puzzle/LockedCandidate1.png" height="275"/><br>
+<img src="images/puzzle/LockedCandidate2.png" height="275"/><br></p>
 <h3 id="32d-lockedset">3)2D LockedSet</h3>
 <p>２つの候補のあるセルが Link で連結しているとき、Locked になる。</p>
 <p>最初の例：
@@ -105,9 +105,9 @@ Locked を壊す候補数字は偽となる。<br>
 また、同時に３セルr579c6は ３候補数字 #345 で Locked になる。
 これら２つの LockedSet は双対の関係にある。
 実際、LockedSet は双対の Locked が常に生じている。これより、５次(５D)以上の LockedSet アルゴリズムは必要ない。<br>
-<img src="file:images/puzzle/LockedSet2.png" height="250"/><br>
-<img src="file:images/puzzle/LockedSet3.png" height="250"/><br>
-<img src="file:images/puzzle/LockedSet4.png" height="250"/><br></p>
+<img src="images/puzzle/LockedSet2.png" height="250"/><br>
+<img src="images/puzzle/LockedSet3.png" height="250"/><br>
+<img src="images/puzzle/LockedSet4.png" height="250"/><br></p>
 <h3 id="4fish">4)Fish</h3>
 <p>以下の例は、X-wing (2D-Fish)アルゴリズムで、２つのlinkの候補数字が、別の２つのLinkでカバーされている。
 一般的に、ｎ個の link群(BaseSet) が、異なるｎ個の link群(CoverSet) でカバーされている状態は、Locked になる。
@@ -118,13 +118,13 @@ BaseSetとCoverSetの論理は、HPで解説している。
 <a href="https://gidoo-code.github.io/Sudoku_Solver_Generator/page36.html">https://gidoo-code.github.io/Sudoku_Solver_Generator/page36.html</a>&quot;Franken/Mutant Fish&quot;<br>
 <a href="https://gidoo-code.github.io/Sudoku_Solver_Generator_jp/page60.html">https://gidoo-code.github.io/Sudoku_Solver_Generator_jp/page60.html</a>&quot;GeneralLogic&quot;<br>
 <a href="https://gidoo-code.github.io/Sudoku_Solver_Generator/page60.html">https://gidoo-code.github.io/Sudoku_Solver_Generator/page60.html</a>&quot;GeneralLogic&quot;<br>
-<img src="file:images/puzzle/Fish1.png" height="250"/><br></p>
+<img src="images/puzzle/Fish1.png" height="250"/><br></p>
 <h3 id="5skyscraper">5)Skyscraper</h3>
-<p><img src="file:images/puzzle/Skyscraper.png" height="250"/><br></p>
+<p><img src="images/puzzle/Skyscraper.png" height="250"/><br></p>
 <h3 id="6sue-de-coq">6)Sue De Coq</h3>
 <p>２つのALSと候補数字がある特定の条件を満たすとき、一見奇妙な Locked になる。
 多くの場合、他のもっと簡単な解法で解けるので、&quot;Sue De Coq&quot; が必要なケースは稀である。<br>
-<img src="file:images/puzzle/SueDeCoq.png" height="250"/><br></p>
+<img src="images/puzzle/SueDeCoq.png" height="250"/><br></p>
 <h3 id="7another">7)another</h3>
 <p>ここに示したアルゴリズムの他にも多数の解析アルゴリズムが知られている（以下のHPなど)。
 また、C#プログラムをダウンロードするのもよいでしょう。<br>
