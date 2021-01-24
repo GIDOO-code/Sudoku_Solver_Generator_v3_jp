@@ -39,7 +39,7 @@
 3セル以上のリンクは "Weak link" と呼ばれる。
 ”Strong link" と "Weak link" のイメージを以下に示す。
 
-Strong linkでは、一方は真で他方は偽となる。
+Strong linkでは、一方は真で他方は偽となる。<br>
 <img src="images/puzzle/StrongLink.png" height="250"/><br>
 
 Weak linkでは、どれかが真で、残りの全てが偽となる。
